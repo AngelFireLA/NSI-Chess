@@ -67,5 +67,5 @@ Tâche 6: Optimisation
 
 6.1 Optimisation de la rapidité et de la fluidité de l'interface utilisateur
 6.2 Optimisation de la rapidité et de la fluidité de l'IA
-6.3 Optimisation des animations pour garantir une expérience utilisateur agréable
+6.3 Optimisation des animations pour garantir une expérience utilisateur agréable 
 6.4 Test de la performance pour vérifier les améliorations apportées
