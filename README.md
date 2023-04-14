@@ -1,10 +1,6 @@
 # NSI-Chess
 
 Jeux- d'échecs :
-2 étapes:
-- créer le jeux d'échecs
-- créer le bot
-
 Tâche 1 : Conception de l'interface utilisateur <br />
 1.1.1 Définition des fonctionnalités de l'interface utilisateur <br />
 1.1.2 Croquis des écrans de jeu et de l'interface utilisateur <br />
@@ -33,6 +29,9 @@ Tâche 2 : Programmation de la logique du jeu <br />
 2.1.3 Définition des couleurs des pièces pour les deux joueurs <br />
 2.1.4 Programmation de la création initiale du plateau de jeu avec les pièces à leurs positions de départ <br />
 2.1.5 Programmation de la vérification des mouvements valides pour chaque type de pièce et pour chaque case sur le plateau de jeu <br />
+2.1.5.1 vérifier s'il y a échec
+2.1.5.2 vérifier s'il y a mat
+2.1.5.3 vérifier si la pièce n'est pas pin
 2.1.6 Programmation de la détection des collisions entre les pièces et la validation de la légalité des coups <br />
 2.1.7 Programmation de la gestion des prises de pièces et des promotions de pions <br />
 2.1.8 Programmation de la gestion de la prise en passant pour les pions <br />
@@ -72,3 +71,12 @@ Tâche 6: Optimisation<br />
 6.2 Optimisation de la rapidité et de la fluidité de l'IA <br />
 6.3 Optimisation des animations pour garantir une expérience utilisateur agréable  <br />
 6.4 Test de la performance pour vérifier les améliorations apportées <br />
+
+Code en lui même:
+**ne pas oublier de mettre des commentaires dans le code**
+- main.py
+  - dossiers nommés par la personne qui créer les scripts dedans
+
+Choses à connaître :
+ - les classes en python
+ - pygame
