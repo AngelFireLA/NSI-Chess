@@ -1,13 +1,13 @@
-
+from lysandre.pieces.piece import *
 
 class Plateau():
 
-    def __init__(self, pieces: list):
-        self.grille = self.init_grille(pieces)
-        pass
+    def __init__(self, grille=None):
+
+        self.grille = grille
 
     def init_grille(self, pieces: list):
-        grille= []
+        self.grille= []
         for i in range(8):
             ligne = []
             for j in range(8):
@@ -18,30 +18,66 @@ class Plateau():
                         if piece.x-1 == j and piece.y-1==i:
                             p = piece
                 if p:
+                    #Une des classes pièces
                     ligne.append(p)
                 else:
-                    ligne.append(".")
-            grille.append(ligne)
-        return grille
+                    ligne.append(None)
+            self.grille.append(ligne)
+        return self.grille
 
     def montrer_grille(self):
         for i in self.grille:
-            print(i)
+            ligne = []
+            for j in i:
+                if j:
+                    ligne.append(j.type_de_piece)
+                else:
+                    ligne.append(None)
+            print(ligne)
 
-    def liste_moves_legaux(self) -> list:
-        #retourne la liste des coups légaux
-        pass
+    def get_grille(self):
+        return self.grille
 
+    # retourne la liste des coups légaux
+    def liste_moves_legaux(self, couleur: str) -> list:
+        moves = []
+        for i in self.grille:
+            for j in i:
+                if j:
+                    if j.couleur == couleur:
+                        moves += j.liste_coups_legaux()
+        return moves
+
+    # vérifie s'il y a pat
     def est_pat(self) -> bool:
-        #vérifie s'il y a pat
+
         pass
 
-    def est_roi_contre_roi(self) -> bool:
-        #vérifie s'il ne reste que des rois
-        pass
+    # vérifie s'il ne reste que des rois sur le plateau
+    def roi_contre_roi(self) -> bool:
+        pieces_restantes = []
+        for i in self.grille:
+            for j in i:
+                if j:
+                    pieces_restantes.append(j)
+        for piece in pieces_restantes:
+            if not isinstance(piece, Roi):
+                return False
+        return True
 
-    def get_piece(self, x, y):
-        if self.grille[y][x] == ".":
-            return None
-        else:
-            return self.grille[y][x]
+    def pion_promouvable(self) -> bool:
+        for i in self.grille:
+            for j in i:
+                if j:
+                    if isinstance(j, Pion):
+                        if j.y == 0 or j.y == 7:
+                            return j
+        return False
+
+    def promote_pion(self, pion: Pion, new_piece: Piece):
+        self.grille[pion.y][pion.x] = new_piece
+        new_piece.x = pion.x
+        new_piece.y = pion.y
+        new_piece.couleur = pion.couleur
+        if pion.promotable:
+            self.grille[pion.y][pion.x] = pion
