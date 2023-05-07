@@ -42,7 +42,7 @@ class Partie():
         return symbol_piece_dict[symbol]
 
 p = Partie()
-p.setup_from_fen("6bq/7b/8/8/8/8/8/8")
+p.setup_from_fen("8/8/8/8/3q4/8/8/8")
 p.plateau.montrer_grille()
-roi = chess_utils.get_piece(p.plateau.get_grille(),7, 0)
+roi = chess_utils.get_piece(p.plateau.get_grille(),3, 4)
 print(roi.liste_coups_legaux(p.plateau.get_grille()))
