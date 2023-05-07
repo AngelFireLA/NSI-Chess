@@ -1,11 +1,13 @@
 import chess_utils
+from lysandre.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
 from lysandre.plateau import Plateau
-from lysandre.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
+
 
 class Partie():
-    def __init__(self, type_de_partie: str ="normale", tour="blanc", points_blanc=0, points_noir=1):
+    def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1):
         self.points_blanc = 0
         self.points_noir = 0
+        self.setup = False
         self.terminee = False
         self.tour = tour
         if type_de_partie == "normale":
@@ -31,6 +33,7 @@ class Partie():
                     file_index += 1
             grille.append(ligne)
         self.plateau = Plateau(grille)
+        self.setup = True
 
     def piece_from_symbol(self, symbol: str):
         symbol_piece_dict = {
@@ -41,8 +44,54 @@ class Partie():
         }
         return symbol_piece_dict[symbol]
 
+    def run(self):
+        if self.setup:
+            self.plateau.montrer_grille()
+            while not self.terminee:
+                inp_piece = input("Sélectionner une pièce :")
+                if inp_piece == "q":
+                    self.terminee = True
+                    break
+                piece_selectionner: Piece = chess_utils.get_piece(p.plateau.get_grille(), int(inp_piece.split(',')[0]),
+                                                                  int(inp_piece.split(',')[1]))
+                while not piece_selectionner:
+                    inp_piece = input("Sélectionner une pièce :")
+                    piece_selectionner: Piece = chess_utils.get_piece(p.plateau.get_grille(),
+                                                                      int(inp_piece.split(',')[0]),
+                                                                      int(inp_piece.split(',')[1]))
+                if piece_selectionner.couleur != self.tour:
+                    print("Cette pièce n'est pas votre")
+                    continue
+                print(f"Vous avez sélectionné {piece_selectionner.type_de_piece}")
+                print(
+                    f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(p.plateau.get_grille())}")
+                inp_coup = input("Sélectionner nouvelle coordonnées :")
+                if inp_coup == "r":
+                    continue
+                coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
+                                               self.plateau.get_grille(), self)
+                while not coup:
+                    inp_coup = input("Sélectionner nouvelle coordonnées :")
+                    coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
+                                                   self.plateau.get_grille(), self)
+                    print(coup)
+                self.plateau.set_grille(coup)
+                self.plateau.montrer_grille()
+                if self.tour == "blanc":
+                    self.tour = "noir"
+                else:
+                    self.tour = "blanc"
+
+        else:
+            print("Erreur, vous n'avez pas setup la position initiale")
+
+
 p = Partie()
-p.setup_from_fen("8/8/8/8/3q4/8/8/8")
-p.plateau.montrer_grille()
-roi = chess_utils.get_piece(p.plateau.get_grille(),3, 4)
-print(roi.liste_coups_legaux(p.plateau.get_grille()))
+p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+p.run()
+# grille = p.plateau.get_grille()
+# p.plateau.montrer_grille()
+# roi: Union[Cavalier, Piece] = chess_utils.get_piece(p.plateau.get_grille(),0, 0)
+# print(roi.liste_coups_legaux(grille))
+# p.plateau.set_grille(roi.move(1, 0, grille, p))
+# p.plateau.montrer_grille()

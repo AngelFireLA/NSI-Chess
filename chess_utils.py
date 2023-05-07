@@ -16,3 +16,4 @@ def get_piece_type(grille: list, x:int, y:int):
         return grille[y][x].type_de_piece
     else:
         return None
+

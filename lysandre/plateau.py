@@ -38,6 +38,9 @@ class Plateau():
     def get_grille(self):
         return self.grille
 
+    def set_grille(self, grille):
+        self.grille = grille
+
     # retourne la liste des coups légaux
     def liste_moves_legaux(self, couleur: str) -> list:
         moves = []
