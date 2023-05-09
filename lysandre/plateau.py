@@ -68,19 +68,3 @@ class Plateau():
                 return False
         return True
 
-    def pion_promouvable(self) -> bool:
-        for i in self.grille:
-            for j in i:
-                if j:
-                    if isinstance(j, Pion):
-                        if j.y == 0 or j.y == 7:
-                            return j
-        return False
-
-    def promote_pion(self, pion: Pion, new_piece: Piece):
-        self.grille[pion.y][pion.x] = new_piece
-        new_piece.x = pion.x
-        new_piece.y = pion.y
-        new_piece.couleur = pion.couleur
-        if pion.promotable:
-            self.grille[pion.y][pion.x] = pion

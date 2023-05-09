@@ -68,6 +68,9 @@ class Roi(Piece):
             if x + patterne[i][0] < 0 or x + patterne[i][0] > 7 or y + patterne[i][1] < 0 or y + \
                     patterne[i][1] > 7:
                 patterne.pop(i)
+        if not self.moved:
+            patterne.append((2, 0))
+            patterne.append((-3, 0))
         return patterne
 
     def liste_coups_legaux(self, grille: list):
@@ -79,17 +82,17 @@ class Roi(Piece):
         for move in patterne:
             test_x, test_y = self.x + move[0], self.y + move[1]
             for intra_move in self.get_patterne_possible(test_x, test_y):
-                piece_trouvee = chess_utils.get_piece_type(grille, test_x + intra_move[0], test_y + intra_move[1])
+                total_x = self.x+ test_x + intra_move[0]
+                total_y = self.y + test_y + intra_move[1]
+                if total_x < 0 or total_x > 7 or total_y < 0 or total_y > 7:
+                    continue
+                piece_trouvee = chess_utils.get_piece_type(grille, self.x+ test_x + intra_move[0], self.y + test_y + intra_move[1])
                 if piece_trouvee:
-                    if chess_utils.get_piece_type(grille, test_x + intra_move[0],
-                                                  test_y + intra_move[1]) == "roi" and chess_utils.get_piece(grille,
-                                                                                                             test_x +
-                                                                                                             intra_move[
-                                                                                                                 0],
-                                                                                                             test_y +
-                                                                                                             intra_move[
-                                                                                                                 1]).couleur != self.couleur:
+                    if chess_utils.get_piece_type(grille, test_x + intra_move[0], test_y + intra_move[1]) == "roi" and chess_utils.get_piece(grille, test_x + intra_move[0], test_y + intra_move[1]).couleur != self.couleur:
                         move_illegaux.append(move)
+                print(test_x, test_y, grille[self.y + move[1]][self.x + move[0]])
+            if grille[self.y + move[1]][self.x + move[0]] and grille[self.y + move[1]][self.x + move[0]].couleur != self.couleur:
+                move_illegaux.append(move)
         for move in move_illegaux:
             patterne.remove(move)
         return patterne
@@ -97,12 +100,28 @@ class Roi(Piece):
     def move(self, new_x, new_y, grille: list, partie):
         if (new_x, new_y) in self.liste_coups_legaux(grille):
             self.moved = True
-            if grille[self.y + new_y][self.x + new_x]:
-                self.capture(grille[self.y + new_y][self.x + new_x], partie)
-            grille[self.y][self.x] = None
-            self.x += new_x
-            self.y += new_y
-            grille[self.y][self.x] = self
+
+            if (new_x, new_y) == (2, 0):
+                tour: Tour = grille[self.y + new_y][self.x + new_x]
+                grille = tour.move(self.x+1, self.y,grille, partie, True)
+                grille[self.y][self.x] = None
+                self.x += new_x
+                self.y += new_y
+                grille[self.y][self.x] = self
+            if (new_x, new_y) == (-3, 0):
+                tour: Tour = grille[self.y + new_y][self.x + new_x]
+                grille = tour.move(self.x - 1, self.y, grille, partie, True)
+                grille[self.y][self.x] = None
+                self.x += new_x
+                self.y += new_y
+                grille[self.y][self.x] = self
+            else:
+                if grille[self.y + new_y][self.x + new_x]:
+                    self.capture(grille[self.y + new_y][self.x + new_x], partie)
+                grille[self.y][self.x] = None
+                self.x += new_x
+                self.y += new_y
+                grille[self.y][self.x] = self
             return grille
         else:
             print(f"Le coup ({new_x}, {new_y}) n'est pas valide pour la pièce de couleur {self.couleur}.")
@@ -125,8 +144,6 @@ class Roi(Piece):
 class Pion(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
         super().__init__(couleur, capturee, "pion", x, y, 1)
-        if self.y == 7 or self.y == 0:
-            self.promotable = True
 
     def get_patterne_possible(self, grille: list):
         if self.couleur == "blanc":
@@ -150,16 +167,21 @@ class Pion(Piece):
 
     def liste_coups_legaux(self, grille: list):
         patterne = self.get_patterne_possible(grille)
+        print(self.couleur)
         if self.couleur == "blanc":
-            if grille[self.y - 1][self.x - 1]:
-                patterne.append((-1, -1))
-            if grille[self.y - 1][self.x + 1]:
-                patterne.append((1, -1))
+            if self.y - 1 >= 0 and self.x - 1 >= 0:
+                if grille[self.y - 1][self.x - 1]:
+                    patterne.append((-1, -1))
+            if self.y - 1 >= 0 and self.x + 1 <= 7:
+                if grille[self.y - 1][self.x + 1]:
+                    patterne.append((1, -1))
         else:
-            if grille[self.y + 1][self.x - 1]:
-                patterne.append((-1, +1))
-            if grille[self.y + 1][self.x + 1]:
-                patterne.append((1, +1))
+            if self.x - 1 >= 0 and self.y + 1 <= 7:
+                if grille[self.y + 1][self.x - 1]:
+                    patterne.append((-1, +1))
+            if self.y + 1 <= 7 and self.x + 1 <= 7:
+                if grille[self.y + 1][self.x + 1]:
+                    patterne.append((1, +1))
         return patterne
 
     def move(self, new_x, new_y, grille: list, partie):
@@ -171,7 +193,11 @@ class Pion(Piece):
             self.x += new_x
             self.y += new_y
             grille[self.y][self.x] = self
-            return grille
+            if (self.couleur == "blanc" and self.y == 0) or (self.couleur == "noir" and self.y == 7):
+               new_piece = Dame(self.couleur)
+               return self.promote(grille, new_piece)
+            else:
+                return grille
         else:
             print(f"Le coup ({new_x}, {new_y}) n'est pas valide pour la pièce de couleur {self.couleur}.")
             return None
@@ -189,6 +215,13 @@ class Pion(Piece):
             partie.points_noir += piece_capturee.valeur
             print(f"Les noirs ont maintenant {partie.points_noir} points")
 
+    def promote(self, grille: list, new_piece: Piece):
+        grille[self.y][self.x] = new_piece
+        new_piece.x = self.x
+        new_piece.y = self.y
+        new_piece.moved = True
+        return grille
+
 
 class Cavalier(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
@@ -204,7 +237,12 @@ class Cavalier(Piece):
         return patterne
 
     def liste_coups_legaux(self, grille: list):
-        return self.get_patterne_possible()
+        coups =  self.get_patterne_possible()
+        for coup in coups:
+            if grille[self.y+coup[1]][self.x+coup[0]]:
+                print(coup)
+                coups.remove(coup)
+        return coups
 
     def move(self, new_x, new_y, grille: list, partie):
         if (new_x, new_y) in self.liste_coups_legaux(grille):
@@ -275,8 +313,8 @@ class Tour(Piece):
                     break
         return n_patterne
 
-    def move(self, new_x, new_y, grille: list, partie):
-        if (new_x, new_y) in self.liste_coups_legaux(grille):
+    def move(self, new_x, new_y, grille: list, partie, forced=False):
+        if (new_x, new_y) in self.liste_coups_legaux(grille) or forced:
             self.moved = True
             if grille[self.y + new_y][self.x + new_x]:
                 self.capture(grille[self.y + new_y][self.x + new_x], partie)

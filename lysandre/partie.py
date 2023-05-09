@@ -52,6 +52,9 @@ class Partie():
                 if inp_piece == "q":
                     self.terminee = True
                     break
+                if inp_piece == "p":
+                    print(self.points_blanc, self.points_noir)
+                    continue
                 piece_selectionner: Piece = chess_utils.get_piece(p.plateau.get_grille(), int(inp_piece.split(',')[0]),
                                                                   int(inp_piece.split(',')[1]))
                 while not piece_selectionner:
@@ -87,7 +90,7 @@ class Partie():
 
 
 p = Partie()
-p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+p.setup_from_fen("8/8/8/8/8/8/3PPP2/3PK2R")
 p.run()
 # grille = p.plateau.get_grille()
 # p.plateau.montrer_grille()
