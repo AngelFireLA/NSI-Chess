@@ -78,21 +78,35 @@ class Roi(Piece):
         # si oui enlever cette case de la liste des cases possible:
         patterne = self.get_patterne_possible(self.x, self.y)
         print()
+
         move_illegaux = []
         for move in patterne:
-            test_x, test_y = self.x + move[0], self.y + move[1]
-            for intra_move in self.get_patterne_possible(test_x, test_y):
-                total_x = self.x+ test_x + intra_move[0]
-                total_y = self.y + test_y + intra_move[1]
-                if total_x < 0 or total_x > 7 or total_y < 0 or total_y > 7:
-                    continue
-                piece_trouvee = chess_utils.get_piece_type(grille, self.x+ test_x + intra_move[0], self.y + test_y + intra_move[1])
-                if piece_trouvee:
-                    if chess_utils.get_piece_type(grille, test_x + intra_move[0], test_y + intra_move[1]) == "roi" and chess_utils.get_piece(grille, test_x + intra_move[0], test_y + intra_move[1]).couleur != self.couleur:
+            if move == (2, 0):
+                if self.x+move[0] <= 7:
+                    if not chess_utils.get_piece(grille, self.x+3, self.y):
                         move_illegaux.append(move)
-                print(test_x, test_y, grille[self.y + move[1]][self.x + move[0]])
-            if grille[self.y + move[1]][self.x + move[0]] and grille[self.y + move[1]][self.x + move[0]].couleur != self.couleur:
+                    else:
+                        piece: Piece = chess_utils.get_piece(grille, self.x+3, self.y)
+                        if not (piece.type_de_piece == "tour" or piece.couleur == self.couleur or not piece.moved):
+                            move_illegaux.append(move)
+                        else:
+                            if chess_utils.get_piece(grille, self.x+2, self.y) or chess_utils.get_piece(grille, self.x+1, self.y):
+                                move_illegaux.append(move)
+
+            elif move == (-3, 0):
+                if self.x + move[0] >= 0:
+                    if not chess_utils.get_piece(grille, self.x - 4, self.y):
+                        move_illegaux.append(move)
+                    else:
+                        piece: Piece = chess_utils.get_piece(grille, self.x - 4, self.y)
+                        if not (piece.type_de_piece == "tour" or piece.couleur == self.couleur or not piece.moved):
+                            move_illegaux.append(move)
+                        else:
+                            if chess_utils.get_piece(grille, self.x - 3, self.y) or chess_utils.get_piece(grille, self.x - 2, self.y) or chess_utils.get_piece(grille, self.x - 1, self.y):
+                                move_illegaux.append(move)
+            if grille[self.y + move[1]][self.x + move[0]] and grille[self.y + move[1]][self.x + move[0]].couleur == self.couleur:
                 move_illegaux.append(move)
+        print(move_illegaux)
         for move in move_illegaux:
             patterne.remove(move)
         return patterne
