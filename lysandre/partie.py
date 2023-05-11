@@ -7,12 +7,19 @@ class Partie():
     def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1):
         self.points_blanc = 0
         self.points_noir = 0
+        #setup pour voir si le plateau a été défini
         self.setup = False
         self.terminee = False
+        #tour dans "a qui le tour" et pas la pièce
         self.tour = tour
-        if type_de_partie == "normale":
+        self.type_de_partie = type_de_partie
+        #type_de_partie au cas où qu'on fait des modes de jeux customs
+        if self.type_de_partie == "normale":
             self.plateau = Plateau()
 
+    #Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
+    # on peut le générer pour n'importe quel position, facielement en ligne
+    #même moi je me souviens plus comment le code marche car il est compliqué
     def setup_from_fen(self, fen: str):
         grille = []
         rank_strings = fen.split('/')
@@ -35,6 +42,7 @@ class Partie():
         self.plateau = Plateau(grille)
         self.setup = True
 
+    #Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
     def piece_from_symbol(self, symbol: str):
         symbol_piece_dict = {
             'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
@@ -44,57 +52,71 @@ class Partie():
         }
         return symbol_piece_dict[symbol]
 
+    #Boucle qui gère le début jusqu'à la fin d'une partie
     def run(self):
         if self.setup:
-            self.plateau.montrer_grille()
-            while not self.terminee:
-                inp_piece = input("Sélectionner une pièce :")
-                if inp_piece == "q":
-                    self.terminee = True
-                    break
-                if inp_piece == "p":
-                    print(self.points_blanc, self.points_noir)
-                    continue
-                piece_selectionner: Piece = chess_utils.get_piece(p.plateau.get_grille(), int(inp_piece.split(',')[0]),
-                                                                  int(inp_piece.split(',')[1]))
-                while not piece_selectionner:
+            if self.type_de_partie == "normale":
+                self.plateau.montrer_grille()
+                #Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
+                while not self.terminee:
                     inp_piece = input("Sélectionner une pièce :")
+                    #q pour "quitter"
+                    if inp_piece == "q":
+                        self.terminee = True
+                        break
+                    #p pour "points"
+                    if inp_piece == "p":
+                        print(self.points_blanc, self.points_noir)
+                        continue
+                    #Récupère le contenu de la case aux corrdonées données
                     piece_selectionner: Piece = chess_utils.get_piece(p.plateau.get_grille(),
                                                                       int(inp_piece.split(',')[0]),
                                                                       int(inp_piece.split(',')[1]))
-                if piece_selectionner.couleur != self.tour:
-                    print("Cette pièce n'est pas votre")
-                    continue
-                print(f"Vous avez sélectionné {piece_selectionner.type_de_piece}")
-                print(
-                    f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(p.plateau.get_grille())}")
-                inp_coup = input("Sélectionner nouvelle coordonnées :")
-                if inp_coup == "r":
-                    continue
-                coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                               self.plateau.get_grille(), self)
-                while not coup:
-                    inp_coup = input("Sélectionner nouvelle coordonnées :")
+                    #Si le joueur à sélectionner une case vide, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
+                    if not piece_selectionner:
+                        print("Erreur, la case sélectionnée est vide.")
+                        continue
+                    #Si le joueur à sélectionner une pièce de son adversaire à jouer, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
+                    if piece_selectionner.couleur != self.tour:
+                        print("Cette pièce n'est pas votre")
+                        continue
+                    print(f"Vous avez sélectionné {piece_selectionner.type_de_piece}")
+                    print(
+                        f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(p.plateau.get_grille())}")
+                    inp_coup = input("Sélectionner le coup choisi :")
+                    #r pour recommencer, si on ne veut plus jouer cette pièce
+                    if inp_coup == "r":
+                        continue
                     coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
                                                    self.plateau.get_grille(), self)
-                    print(coup)
-                self.plateau.set_grille(coup)
-                self.plateau.montrer_grille()
-                if self.tour == "blanc":
-                    self.tour = "noir"
-                else:
-                    self.tour = "blanc"
+                    #boucle qui s'active que si le coup envoyé par le joueur n'est pas dans la liste des coups possibles, et donc redemande un coup au joueur,
+                    #jusqu'à ce qu'il envoie un coup valide
+                    while not coup:
+                        inp_coup = input("Sélectionner nouvelle coordonnées :")
+                        coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
+                                                       self.plateau.get_grille(), self)
+                        print(coup)
+                    print(f"Vous avez jouer {inp_coup}")
+                    #Met à jour le plateau après le mouvement
+                    self.plateau.set_grille(coup)
+                    self.plateau.montrer_grille()
+                    #change le tour
+                    if self.tour == "blanc":
+                        self.tour = "noir"
+                    else:
+                        self.tour = "blanc"
+                    #s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
+                    #if self.plateau.check_si_roi_restant():
+                    #    print(f"Partie terminée! Les vainqueurs sont les {self.plateau.check_si_roi_restant()}")
+                    #    self.terminee = True
 
+                    if self.plateau.roi_contre_roi():
+                        print("Egalité ! Il ne reste que des rois sur le plateau.")
+                        self.terminee = True
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 
-
+#Partie exemple
 p = Partie()
-p.setup_from_fen("8/8/8/8/8/8/3PPP2/3PK2R")
+p.setup_from_fen("N7/2p5/1p6/8/8/8/8/8")
 p.run()
-# grille = p.plateau.get_grille()
-# p.plateau.montrer_grille()
-# roi: Union[Cavalier, Piece] = chess_utils.get_piece(p.plateau.get_grille(),0, 0)
-# print(roi.liste_coups_legaux(grille))
-# p.plateau.set_grille(roi.move(1, 0, grille, p))
-# p.plateau.montrer_grille()
