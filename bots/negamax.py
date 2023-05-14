@@ -53,7 +53,7 @@ def evaluate_board(grid, couleur: int):
     pions = 0
     pion_par_colonne = {-1: 0, 0: 0, 1: 0}
     if roi.couleur == "blanc":
-        #count how many pawn there is in the 3 squares in front of the king
+        #count how many pion there is in the 3 squares in front of the king
 
         for i in range(-1, 2):
             if roi.y - 1 < 0:
@@ -69,7 +69,7 @@ def evaluate_board(grid, couleur: int):
                 pions+=1
                 pion_par_colonne[i] += 1
     else :
-        #count how many pawn there is in the 3 squares in front of the king
+        #count how many pion there is in the 3 squares in front of the king
         for i in range(-1, 2):
             if roi.y +  1 > 7:
                 break
@@ -86,10 +86,60 @@ def evaluate_board(grid, couleur: int):
 
     king_safety = 0
     king_safety += 10 * pions
-    king_safety += 20 * pion_par_colonne[1]
+    king_safety += 10 * pion_par_colonne[1]
+    king_safety += 10 * pion_par_colonne[0]
+    king_safety += 10 * pion_par_colonne[2]
     king_safety += score_de_position
     king_safety -= 20 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if elem.couleur != roi.couleur])
     score+=king_safety
+
+    #pion structure
+    pion_structure_score = 0
+    isolated_pions_score = 0
+    doubled_pions_score = 0
+    tripled_pions_score = 0
+    pion_chain_score = 0
+
+    pion_structure = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0}
+    pions = [piece for piece in chess_utils.liste_pieces_bougeables(grid, "blanc") if isinstance(piece, Roi)]
+    for pion in pions:
+        pion_structure[pion.x] += 1
+
+    # Calculate isolated pions
+    for column in range(8):
+        if pion_structure[column] > 0:
+            if column == 0:
+                if pion_structure[column + 1] == 0:
+                    isolated_pions_score -= 20
+            elif column == 7:
+                if pion_structure[column - 1] == 0:
+                    isolated_pions_score -= 20
+            else:
+                if pion_structure[column - 1] == 0 and pion_structure[column + 1] == 0:
+                    isolated_pions_score -= 20
+
+    # Calculate doubled and tripled pions
+    for column in range(8):
+        if pion_structure[column] > 1:
+            doubled_pions_score -= 10 * (pion_structure[column] - 1)
+        if pion_structure[column] > 2:
+            tripled_pions_score -= 20 * (pion_structure[column] - 2)
+
+    # Calculate pion chains
+    for column in range(8):
+        if pion_structure[column] > 0:
+            if column == 0:
+                if pion_structure[column + 1] > 0:
+                    pion_chain_score += 10
+            elif column == 7:
+                if pion_structure[column - 1] > 0:
+                    pion_chain_score += 10
+            else:
+                if pion_structure[column - 1] > 0 and pion_structure[column + 1] > 0:
+                    pion_chain_score += 10
+
+
+    pion_structure_score = isolated_pions_score + doubled_pions_score + tripled_pions_score + pion_chain_score
 
     return score
 
