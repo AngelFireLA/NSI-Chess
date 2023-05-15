@@ -111,7 +111,7 @@ class Partie():
                         else:
                             couleur = -1
                         start_time = time.time()
-                        best_score, best_combo = negamax.alpha_beta_pruning(self.grille, depth, color=couleur,
+                        best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur,
                                                                             alpha=float('-inf'),
                                                                             beta=float('inf'))
                         print(best_score)

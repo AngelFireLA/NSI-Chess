@@ -521,3 +521,5 @@ class Fou(Piece):
         # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
         piece_capturee.x = -1
         piece_capturee.y = -1
+
+
