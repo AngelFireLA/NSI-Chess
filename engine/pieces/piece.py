@@ -182,7 +182,7 @@ class Pion(Piece):
                 # todo : vérifier s'il peut pas en passant
                 patterne.append((0, -1))
             #si le pion est sur la bonne ligne et pas de pièces devant, lui laisse avancé de 2 cases
-            if self.y == 6 and not chess_utils.get_piece(grille, self.x, 5):
+            if self.y == 6 and not chess_utils.get_piece(grille, self.x, 4):
                 patterne.append((0, -2))
             return patterne
         else:
@@ -191,7 +191,7 @@ class Pion(Piece):
             if not grille[self.y + 1][self.x]:
                 # todo : vérifier s'il peut pas en passant
                 patterne.append((0, +1))
-            if self.y == 1 and not chess_utils.get_piece(grille, self.x, 2):
+            if self.y == 1 and not chess_utils.get_piece(grille, self.x, 3):
                 patterne.append((0, +2))
             return patterne
 

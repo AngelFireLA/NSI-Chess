@@ -114,13 +114,12 @@ class Partie():
                         best_score, best_combo = negamax.alpha_beta_pruning(self.grille, depth, color=couleur,
                                                                             alpha=float('-inf'),
                                                                             beta=float('inf'))
-                        # print(best_combo)
+                        print(best_score)
                         end_time = time.time()
                         total_time = end_time - start_time
 
                         print(f"Time taken: {total_time} seconds")
                         best_piece, best_move = best_combo
-                        print()
                         print(best_combo)
                         best_piece: Roi
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
@@ -144,8 +143,8 @@ class Partie():
 
 #Partie exemple
 p = Partie()
-p.setup_from_fen("b5r1/8/8/4q3/7n/6P1/5P1P/6K1")
-print(negamax.evaluate_board(p.grille, 1))
+p.setup_from_fen("1k4r1/q7/8/7n/8/6P1/5P1P/6K1")
+#print(negamax.evaluate_board(p.grille, 1))
 #print(len([elem for elem in chess_utils.liste_pieces_dans_rayon(p.grille, 6, 7, 3)]))
 p.mode = "auto"
-#p.run()
+p.run()

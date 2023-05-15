@@ -26,13 +26,27 @@ carte_suretee_du_roi = [    [20*multiplier, 10*multiplier, 5*multiplier, 5*multi
     [20*multiplier, 10*multiplier,  5*multiplier,  5*multiplier,  5*multiplier,  5*multiplier, 10*multiplier, 20*multiplier],
 ]
 
+def get_couleur_str(couleur:int):
+    couleur_str = None
+    if couleur == 1:
+        couleur_str = "blanc"
+    elif couleur ==-1:
+        couleur_str = "noir"
+    return couleur_str
+
 def evaluate_board(grid, couleur: int):
-    score = 0
+
+    score_blanc, score_noir = 0, 0
     #equilibre des points
     points_blanc, points_noir = chess_utils.points(grid)
-    equilibre_de_points = (points_blanc - points_noir) * couleur
+    score_blanc+=points_blanc*10
+    score_noir+=points_noir*10
 
     #todo is checkmate
+    if chess_utils.check_si_roi_restant(grid) == "blanc":
+        score_blanc+=1000
+    elif chess_utils.check_si_roi_restant(grid) == "noir":
+        score_noir+=1000
 
     #cases controlees
     coups = {"blanc": chess_utils.liste_coups_legaux("blanc", grid),
@@ -45,53 +59,70 @@ def evaluate_board(grid, couleur: int):
             if case not in cases_controlees:
                 cases_controlees.add(case)
                 cases_par_couleur[c] += 1
-    equilibre_de_cases = (cases_par_couleur["blanc"] - cases_par_couleur["noir"]) * couleur
 
-    #sureté du roi
-    roi: Roi = next((piece for piece in chess_utils.liste_pieces_bougeables(grid, "blanc") if isinstance(piece, Roi)), None)
-    score_de_position = carte_suretee_du_roi[roi.y][roi.x]
-    pions = 0
-    pion_par_colonne = {-1: 0, 0: 0, 1: 0}
-    if roi.couleur == "blanc":
-        #count how many pion there is in the 3 squares in front of the king
+    score_blanc += cases_par_couleur["blanc"]*0.5
+    score_noir +=  cases_par_couleur["noir"]*0.5
 
-        for i in range(-1, 2):
-            if roi.y - 1 < 0:
-                break
-            if roi.x+i < 0 or roi.x+i > 7:
-                break
-            if grid[roi.y - 1][roi.x+i]:
-                pions+=1
-                pion_par_colonne[i]+=1
-            if roi.y - 2 < 0:
-                continue
-            if grid[roi.y - 2][roi.x+i]:
-                pions+=1
-                pion_par_colonne[i] += 1
-    else :
-        #count how many pion there is in the 3 squares in front of the king
-        for i in range(-1, 2):
-            if roi.y +  1 > 7:
-                break
-            if roi.x+i < 0 or roi.x+i > 7:
-                break
-            if grid[roi.y + 1][roi.x+i]:
-                pions+=1
-                pion_par_colonne[i]+=1
-            if roi.y + 2 > 7:
-                continue
-            if grid[roi.y + 2][roi.x+i]:
-                pions+=1
-                pion_par_colonne[i] += 1
+    #sureté du roi*
+    for l in range(-1,2, 2):
+        pieces = []
+        for piece in chess_utils.liste_pieces_bougeables(grid, get_couleur_str(l)):
+            if isinstance(piece, Roi):
+                pieces.append(piece)
 
-    king_safety = 0
-    king_safety += 10 * pions
-    king_safety += 10 * pion_par_colonne[1]
-    king_safety += 10 * pion_par_colonne[0]
-    king_safety += 10 * pion_par_colonne[2]
-    king_safety += score_de_position
-    king_safety -= 20 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if elem.couleur != roi.couleur])
-    score+=king_safety
+        if len(pieces) <1:
+            continue
+        roi: Roi = pieces[0]
+
+        score_de_position = carte_suretee_du_roi[roi.y][roi.x]
+        pions = 0
+        pion_par_colonne = {-1: 0, 0: 0, 1: 0}
+        if roi.couleur == "blanc":
+            # count how many pion there is in the 3 squares in front of the king
+
+            for i in range(-1, 2):
+                if roi.y - 1 < 0:
+                    break
+                if roi.x + i < 0 or roi.x + i > 7:
+                    break
+                if grid[roi.y - 1][roi.x + i]:
+                    pions += 1
+                    pion_par_colonne[i] += 1
+                if roi.y - 2 < 0:
+                    continue
+                if grid[roi.y - 2][roi.x + i]:
+                    pions += 1
+                    pion_par_colonne[i] += 1
+        else:
+            # count how many pion there is in the 3 squares in front of the king
+            for i in range(-1, 2):
+                if roi.y + 1 > 7:
+                    break
+                if roi.x + i < 0 or roi.x + i > 7:
+                    break
+                if grid[roi.y + 1][roi.x + i]:
+                    pions += 1
+                    pion_par_colonne[i] += 1
+                if roi.y + 2 > 7:
+                    continue
+                if grid[roi.y + 2][roi.x + i]:
+                    pions += 1
+                    pion_par_colonne[i] += 1
+
+        king_safety = 0
+        king_safety += 10 * pions
+        king_safety += 5 * pion_par_colonne[1]
+        king_safety += 5 * pion_par_colonne[0]
+        king_safety += 5 * pion_par_colonne[-1]
+        king_safety += score_de_position
+        king_safety -= 25 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if
+                                 elem.couleur != roi.couleur])
+        king_safety -= 15 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if
+                                 elem.type_de_piece == "dame"])
+        if get_couleur_str(l) == "blanc":
+            score_blanc+=king_safety
+        else:
+            score_noir+=king_safety
 
     #pion structure
     pion_structure_score = 0
@@ -141,7 +172,7 @@ def evaluate_board(grid, couleur: int):
 
     pion_structure_score = isolated_pions_score + doubled_pions_score + tripled_pions_score + pion_chain_score
 
-    return score
+    return (score_blanc-score_noir)*couleur
 
 
 
