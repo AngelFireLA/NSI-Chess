@@ -45,7 +45,7 @@ class Piece():
 
 class Roi(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "roi", x, y, 1000)
+        super().__init__(couleur, capturee, "roi", x, y, 20000)
 
     #Pareil pour toutes les pièces : Récupère tout les mouvements possible s'il  avait 0 pièces autour de la pièce, et autres coups spéciaux
     #Vérifie aussi si la pièce ne vas pas en dehors du plateau
@@ -64,7 +64,7 @@ class Roi(Piece):
         return patterne
 
     #Pareil pour toutes les pièces :  Vérifie si chaque coup est légal en prenant en comptes les autres pièces
-    def liste_coups_legaux(self, grille: list):
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
         patterne = self.get_patterne_possible(self.x, self.y)
         move_legaux = []
 
@@ -73,7 +73,7 @@ class Roi(Piece):
             # Le prochain if et elif sont les cas spéciaux du roc
             # petit roc
             if move == (2, 0):
-                if self.x + move[0] <= 7:
+                if self.x + 3 <= 7:
                     if chess_utils.get_piece(grille, self.x + 3, self.y):
                         # Récupère la tour et si elle y est, la déplace où elle devrait
                         piece = chess_utils.get_piece(grille, self.x + 3, self.y)
@@ -91,7 +91,7 @@ class Roi(Piece):
                     continue
             # grand roc
             elif move == (-2, 0):
-                if self.x + move[0] >= 0:
+                if self.x - 4 >= 0:
                     # même commentaires que pour l'autre roc
                     if chess_utils.get_piece(grille, self.x - 4, self.y):
                         piece: Piece = chess_utils.get_piece(grille, self.x - 4, self.y)
@@ -109,9 +109,9 @@ class Roi(Piece):
 
             # Vérifie s'il n'y a pas une pièce de même couleur là où on veut aller
             if grille[self.y + move[1]][self.x + move[0]]:
-                if grille[self.y + move[1]][self.x + move[0]].couleur == self.couleur:
-                    pass
-                else:
+                if peut_capturer_allie and grille[self.y + move[1]][self.x + move[0]].couleur == self.couleur:
+                    move_legaux.append(move)
+                elif not grille[self.y + move[1]][self.x + move[0]].couleur == self.couleur:
                     move_legaux.append(move)
             else:
                 move_legaux.append(move)
@@ -172,7 +172,7 @@ class Roi(Piece):
 
 class Pion(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "pion", x, y, 1)
+        super().__init__(couleur, capturee, "pion", x, y, 100)
 
     def get_patterne_possible(self, grille: list):
         if self.couleur == "blanc":
@@ -182,7 +182,7 @@ class Pion(Piece):
                 # todo : vérifier s'il peut pas en passant
                 patterne.append((0, -1))
             #si le pion est sur la bonne ligne et pas de pièces devant, lui laisse avancé de 2 cases
-            if self.y == 6 and not chess_utils.get_piece(grille, self.x, 4):
+            if self.y == 6 and not chess_utils.get_piece(grille, self.x, 4) and not chess_utils.get_piece(grille, self.x, 5):
                 patterne.append((0, -2))
             return patterne
         else:
@@ -191,27 +191,39 @@ class Pion(Piece):
             if not grille[self.y + 1][self.x]:
                 # todo : vérifier s'il peut pas en passant
                 patterne.append((0, +1))
-            if self.y == 1 and not chess_utils.get_piece(grille, self.x, 3):
+            if self.y == 1 and not chess_utils.get_piece(grille, self.x, 3) and not chess_utils.get_piece(grille, self.x, 2):
                 patterne.append((0, +2))
             return patterne
 
-    def liste_coups_legaux(self, grille: list):
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
         patterne = self.get_patterne_possible(grille)
         #ajoute les coups de captures s'il y a une pièce de couleur opposée en diagonal
         if self.couleur == "blanc":
             if self.y - 1 >= 0 and self.x - 1 >= 0:
-                if grille[self.y - 1][self.x - 1] and not grille[self.y - 1][self.x - 1].couleur == self.couleur:
-                    patterne.append((-1, -1))
+                if grille[self.y - 1][self.x - 1]:
+                    if not grille[self.y - 1][self.x - 1].couleur == self.couleur:
+                        patterne.append((-1, -1))
+                    elif peut_capturer_allie:
+                        patterne.append((-1, -1))
             if self.y - 1 >= 0 and self.x + 1 <= 7:
-                if grille[self.y - 1][self.x + 1] and not grille[self.y - 1][self.x + 1].couleur == self.couleur:
-                    patterne.append((1, -1))
+                if grille[self.y - 1][self.x + 1]:
+                    if not grille[self.y - 1][self.x + 1].couleur == self.couleur:
+                        patterne.append((1, -1))
+                    elif peut_capturer_allie:
+                        patterne.append((1, -1))
         else:
             if self.x - 1 >= 0 and self.y + 1 <= 7:
-                if grille[self.y + 1][self.x - 1] and not grille[self.y + 1][self.x - 1].couleur == self.couleur:
-                    patterne.append((-1, +1))
+                if grille[self.y + 1][self.x - 1]:
+                    if not grille[self.y + 1][self.x - 1].couleur == self.couleur:
+                        patterne.append((-1, +1))
+                    elif peut_capturer_allie:
+                        patterne.append((-1, +1))
             if self.y + 1 <= 7 and self.x + 1 <= 7:
-                if grille[self.y + 1][self.x + 1] and not grille[self.y + 1][self.x + 1].couleur == self.couleur:
-                    patterne.append((1, +1))
+                if grille[self.y + 1][self.x + 1]:
+                    if not grille[self.y + 1][self.x + 1].couleur == self.couleur:
+                        patterne.append((1, +1))
+                    elif peut_capturer_allie:
+                        patterne.append((1, +1))
         return patterne
 
     def move(self, x_added, y_added, grille: list):
@@ -253,7 +265,7 @@ class Pion(Piece):
 
 class Cavalier(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "cavalier", x, y, 3)
+        super().__init__(couleur, capturee, "cavalier", x, y, 320)
 
     #Rien de spécial
     def get_patterne_possible(self):
@@ -265,12 +277,13 @@ class Cavalier(Piece):
                 patterne.pop(i)
         return patterne
 
-    def liste_coups_legaux(self, grille: list):
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
         coups = self.get_patterne_possible()
         move_illegaux = []
         for coup in coups:
-            if grille[self.y+coup[1]][self.x+coup[0]] and grille[self.y+coup[1]][self.x+coup[0]].couleur == self.couleur:
-                move_illegaux.append(coup)
+            if grille[self.y+coup[1]][self.x+coup[0]]:
+                if grille[self.y + coup[1]][self.x + coup[0]].couleur == self.couleur and not peut_capturer_allie:
+                    move_illegaux.append(coup)
         for move in move_illegaux:
             coups.remove(move)
         return coups
@@ -301,7 +314,7 @@ class Cavalier(Piece):
 
 class Tour(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "tour", x, y, 5)
+        super().__init__(couleur, capturee, "tour", x, y, 500)
 
     #Pour tour et fou, patterne n'est que 1 dans chaque direction possible
     def get_patterne_possible(self):
@@ -312,7 +325,7 @@ class Tour(Piece):
                 patterne.pop(i)
         return patterne
 
-    def liste_coups_legaux(self, grille: list):
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
         patterne = self.get_patterne_possible()
         new_patterne = []
         for move in patterne:
@@ -323,11 +336,14 @@ class Tour(Piece):
                 if not chess_utils.get_piece(grille, self.x + x, self.y + y):
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if not chess_utils.get_piece(grille, self.x + x, self.y + y).couleur == self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
                         new_patterne.append((x, y))
                         break
                     else:
-                        break
+                        pass
                 #ajoute 1 aux directions pour que si la pièce n'a pas atteint une case non vide, elle essaye la prochaine case
                 if x > 0:
                     x += 1
@@ -367,7 +383,7 @@ class Tour(Piece):
 
 class Dame(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "dame", x, y, 9)
+        super().__init__(couleur, capturee, "dame", x, y, 900)
 
     def get_patterne_possible(self):
         #2 patternes pour les mouvements dont ils sont nommés
@@ -383,7 +399,7 @@ class Dame(Piece):
                 patterne_tour.pop(i)
         return patterne_diagonale, patterne_tour
 
-    def liste_coups_legaux(self, grille: list):
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
         patterne = self.get_patterne_possible()
         new_patterne = []
         #répète les boucles pour les mouvements légaux de la tour et du fou
@@ -397,6 +413,9 @@ class Dame(Piece):
                     new_patterne.append((x, y))
                 else:
                     if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
                         new_patterne.append((x, y))
                         break
                     else:
@@ -422,6 +441,9 @@ class Dame(Piece):
                     new_patterne.append((x, y))
                 else:
                     if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
                         new_patterne.append((x, y))
                         break
                     else:
@@ -463,7 +485,7 @@ class Dame(Piece):
 
 class Fou(Piece):
     def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "fou", x, y, 3)
+        super().__init__(couleur, capturee, "fou", x, y, 330)
 
     #pareil que tour presque
     def get_patterne_possible(self):
@@ -474,7 +496,7 @@ class Fou(Piece):
                 patterne.pop(i)
         return patterne
 
-    def liste_coups_legaux(self, grille: list):
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
         patterne = self.get_patterne_possible()
         new_patterne = []
         for move in patterne:
@@ -485,6 +507,9 @@ class Fou(Piece):
                     new_patterne.append((x, y))
                 else:
                     if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
                         new_patterne.append((x, y))
                         break
                     else:

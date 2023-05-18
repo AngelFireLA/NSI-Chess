@@ -20,6 +20,13 @@ def get_piece_type(grille: list, x:int, y:int):
     else:
         return None
 
+def get_couleur_str(couleur:int):
+    couleur_str = None
+    if couleur == 1:
+        couleur_str = "blanc"
+    elif couleur ==-1:
+        couleur_str = "noir"
+    return couleur_str
 
 def liste_pieces_bougeables(grille, couleur: str) -> list:
     return [
@@ -41,11 +48,17 @@ def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
     return liste
 
 
-def liste_coups_legaux(couleur, grille):
+def liste_coups_legaux(couleur, grille, peux_capturer_allier=False):
     pieces = liste_pieces_bougeables(grille, couleur)
-    return [
-        (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille)
-    ]
+    if peux_capturer_allier:
+        coups = [
+            (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille, peut_capturer_allie=True)
+        ]
+    else:
+        coups = [
+            (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille)
+        ]
+    return coups
 
 def check_si_roi_restant(grille):
     compteur_de_roi = {"blanc":0, "noir":0}
@@ -63,6 +76,24 @@ def check_si_roi_restant(grille):
         return "blanc"
     else:
         return False
+
+def check_si_echec_et_mat(grille):
+    for i in range(-1,2,2):
+
+        couleur_str = get_couleur_str(i)
+        oppose_str = get_couleur_str(-i)
+        coups_rois = [(piece, move) for piece, move in liste_coups_legaux(couleur_str, grille) if piece.type_de_piece == "roi"]
+        coups_rois = list(set(coups_rois))
+        coups_legaux_opposes = liste_coups_legaux(oppose_str, grille)
+        for piece, move in coups_legaux_opposes:  # Iterate over a copy of capturable list to safely remove elements
+            attacked_pos = (piece.x + move[0], piece.y + move[1])
+            for ally_piece, ally_move in coups_rois[:]:
+                if attacked_pos == (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
+                    coups_rois.remove((ally_piece, ally_move))
+                    break
+        if len(coups_rois) == 0:
+            return oppose_str
+    return None
 
 def montrer_grille(grille):
     for i in grille:
@@ -96,14 +127,28 @@ def points_avec_roi(grille):
     return points_blanc, points_noir
 
 
-def possible_captures_ou_promotions(couleur, grille):
+def possible_captures_ou_promotions(couleur:str, grille):
     all_legal_moves = liste_coups_legaux(couleur, grille)
     return [
-        (copy.deepcopy(piece), move) for piece, move in all_legal_moves
+        (piece, move) for piece, move in all_legal_moves
         if not points_avec_roi(grille) == points_avec_roi(
             copy.deepcopy(piece).move(move[0], move[1], copy.deepcopy(grille))
         )
     ]
+
+def liste_pieces_en_capture(grille, couleur:int):
+    couleur_str = get_couleur_str(-couleur)
+    nos_coups = liste_coups_legaux(couleur_str, grille, peux_capturer_allier=True)
+    capturable = [(piece,move) for piece, move in possible_captures_ou_promotions(couleur_str, grille)]
+    for piece, move in capturable[:]:  # Iterate over a copy of capturable list to safely remove elements
+        if piece.type_de_piece != 'pion':
+            attacked_pos = (piece.x + move[0], piece.y + move[1])
+            for ally_piece, ally_move in nos_coups:
+                if attacked_pos in (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
+                    capturable.remove((piece, move))
+                    break
+    return capturable
+
 
 
 
