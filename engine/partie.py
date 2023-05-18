@@ -106,13 +106,14 @@ class Partie():
                         i+=1
                         alpha = -float('inf')
                         beta = float('inf')
-                        depth = 6  # choose a suitable search depth
+                        depth = 8  # choose a suitable search depth
                         # call negamax to find the best move
                         if self.tour == "blanc":
                             couleur = 1
                         else:
                             couleur = -1
                         start_time = time.time()
+                        negamax.init_transposition()
                         best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur,
                                                                             alpha=-100000,
                                                                             beta=+100000)

@@ -3,3 +3,6 @@
 *.pyc
 *.xml
 *.pyc
+*.rtbw
+*.rtbz
+engine/endgame/

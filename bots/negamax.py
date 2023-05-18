@@ -1,3 +1,4 @@
+import random
 
 import chess_utils
 from engine.pieces.piece import Roi, Piece, Pion
@@ -273,88 +274,14 @@ def evaluate_board(grid, couleur: int):
     return (score_blanc-score_noir)*couleur
 
 
+# Initialize the move history structure
+move_history = [[0] * 8 for _ in range(8)]  # Assuming an 8x8 chessboard size
 
-def move_ordering_original(piece_moves, board, couleur):
-    king_captures = []
-    other_captures = []
-    quiet_moves = set()
+max_depth = 10
 
-    capture_moves = set(chess_utils.possible_captures_ou_promotions(couleur, board))
+killer_moves_history = [[] for _ in range(max_depth)]
 
-    for piece, move in piece_moves:
-        if (piece, move) in capture_moves:
-            if piece.type_de_piece == "roi":
-                king_captures.append((piece, move))
-            else:
-                # Calculate the value of the captured piece and the attacking piece
-                target_square = (piece.x+ move[0], piece.y+ move[1])
-                target_piece = board[target_square[1]][target_square[0]]
-                captured_piece_value = target_piece.valeur if target_piece else 0
-                attacking_piece_value = piece.valeur
-
-                # Use MVV/LVA ordering by assigning a score to the move
-                score = captured_piece_value - attacking_piece_value
-
-                other_captures.append((piece, move, score))
-        else:
-            quiet_moves.add((piece, move))
-
-    # Sort other_captures based on the scores in descending order
-    other_captures.sort(key=lambda x: x[2], reverse=True)
-
-    other_captures = [(piece, move) for piece, move, _ in other_captures]
-
-
-    # Convert quiet_moves back to a list if necessary
-    quiet_moves = list(quiet_moves)
-
-    # Order the moves based on the priorities
-    ordered_moves = king_captures + other_captures + quiet_moves
-    return ordered_moves
-
-
-def negascout_original(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
-    if depth == 0 or chess_utils.check_si_roi_restant(board):
-        return evaluate_board(board, color), None
-
-    best_move = None
-    b = beta
-    if color == 1:
-        couleur = "blanc"
-    else:
-        couleur = "noir"
-
-    all_moves = chess_utils.liste_coups_legaux(couleur, board)
-
-    # Order the moves using move ordering
-    ordered_moves = move_ordering(all_moves, board, couleur)
-    for piece, move in ordered_moves:
-        new_board = copy.deepcopy(board)
-        new_piece = copy.deepcopy(piece)
-        new_board = new_piece.move(move[0], move[1], new_board)
-        if b == beta or b == alpha + 1:
-            score, _ = negascout(new_board, depth - 1, -b, -alpha, -color)
-        else:
-            score, _ = negascout(new_board, depth - 1, -b, -alpha - 1, -color)
-            if alpha < score < beta:
-                score, _ = negascout(new_board, depth - 1, -beta, -score, -color)
-
-        value = -score
-        if value > alpha:
-            alpha = value
-            best_move = (piece, move)
-
-        if alpha >= beta:
-            break
-        b = alpha + 1
-
-    if not ordered_moves:
-        return evaluate_board(board, color), None
-
-    return alpha, best_move
-
-
-def move_ordering(piece_moves, board, couleur):
+def move_ordering(piece_moves, board, couleur, killer_moves):
     king_captures = []
     other_captures = []
     quiet_moves = set()
@@ -388,14 +315,10 @@ def move_ordering(piece_moves, board, couleur):
     quiet_moves = sorted(quiet_moves, key=lambda x: move_history[x[1][1]][x[1][0]], reverse=True)
 
     # Order the moves based on the priorities
-    ordered_moves = king_captures + other_captures + quiet_moves
+    ordered_moves = king_captures + killer_moves + other_captures + quiet_moves
     return ordered_moves
 
-
-# Initialize the move history structure
-move_history = [[0] * 8 for _ in range(8)]  # Assuming an 8x8 chessboard size
-
-def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
+def negascout_original(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
     if depth == 0 or chess_utils.check_si_roi_restant(board):
         return evaluate_board(board, color), None
 
@@ -408,8 +331,12 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
 
     all_moves = chess_utils.liste_coups_legaux(couleur, board)
 
+    killer_moves = killer_moves_history[depth]  # Retrieve killer moves
+
     # Order the moves using move ordering
-    ordered_moves = move_ordering(all_moves, board, couleur)
+    ordered_moves = move_ordering(all_moves, board, couleur, killer_moves)
+
+
     for piece, move in ordered_moves:
         new_board = copy.deepcopy(board)
         new_piece = copy.deepcopy(piece)
@@ -427,6 +354,11 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
             if alpha < score < beta:
                 score, _ = negascout(new_board, depth - 1, -beta, -score, -color)
 
+        if alpha >= beta:
+            # Add the current move to the killer move history
+            killer_moves.append((piece, move))
+            break
+
         value = -score
         if value > alpha:
             alpha = value
@@ -441,10 +373,150 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
         target_square = (piece.x + move[0], piece.y + move[1])
         move_history[target_square[1]][target_square[0]] -= 1
 
+    # Update the killer moves history
+    killer_moves_history[depth] = killer_moves
+
+
     if not ordered_moves:
         return evaluate_board(board, color), None
 
     return alpha, best_move
+
+
+zobrist = []
+transposition_table = {}
+
+
+def init_transposition():
+    global zobrist, transposition_table
+
+    for _ in range(64):
+        square = []
+        for _ in range(12):
+            piece = []
+            for _ in range(2):
+                piece.append(random.getrandbits(64))
+            square.append(piece)
+        zobrist.append(square)
+
+    transposition_table = {}
+
+
+def zobrist_hash(board):
+    """
+    Generate a unique hash for a board position using Zobrist hashing
+
+    Hashing algorithm from Zobrist (1970)
+    """
+    hash_value = 0
+    for y in range(8):
+        for x in range(8):
+            piece = board[y][x]  # Replace this with your own method to get the piece at a specific position
+            if piece is not None:
+                piece_type = piece.type_de_piece
+                piece_color = piece.couleur
+
+                # Map piece types and colors to corresponding integer values
+                piece_type_mapping = {"roi": 0, "dame": 1, "tour": 2, "fou": 3, "cavalier": 4, "pion": 5}
+                piece_color_mapping = {"blanc": 0, "noir": 1}
+
+                piece_type_value = piece_type_mapping[piece_type]
+                piece_color_value = piece_color_mapping[piece_color]
+                square_index = y * 8 + x
+
+                hash_value ^= zobrist[square_index][piece_type_value][piece_color_value]
+
+    return hash_value
+
+
+def get_transposition_entry(hash_value, color):
+    if hash_value in transposition_table:
+        return transposition_table[hash_value].get(color)
+    return None
+
+
+def store_transposition(hash_value, color, score):
+    if hash_value not in transposition_table:
+        transposition_table[hash_value] = {}
+    transposition_table[hash_value][color] = score
+
+
+def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1):
+    if color == 1:
+        couleur = "blanc"
+    else:
+        couleur = "noir"
+    hash_value = zobrist_hash(board)
+    cached_score = get_transposition_entry(hash_value, color)
+    if cached_score is not None:
+        return cached_score, None
+
+    if depth == 0 or chess_utils.check_si_roi_restant(board) or chess_utils.check_si_echec_et_mat(board) == couleur:
+        score = evaluate_board(board, color)
+        store_transposition(hash_value, color, score)
+        return score, None
+
+    best_move = None
+    b = beta
+
+
+    all_moves = chess_utils.liste_coups_legaux(couleur, board)
+    killer_moves = killer_moves_history[depth]  # Retrieve killer moves
+    ordered_moves = move_ordering(all_moves, board, couleur, killer_moves)
+
+    for piece, move in ordered_moves:
+        new_board = copy.deepcopy(board)
+        new_piece = copy.deepcopy(piece)
+        new_board = new_piece.move(move[0], move[1], new_board)
+        target_square = (piece.x + move[0], piece.y + move[1])
+        target_piece = new_board[target_square[1]][target_square[0]]
+        move_history[target_square[1]][target_square[0]] += 1
+
+        if b == beta or b == alpha + 1:
+            score, _ = negascout(new_board, depth - 1, -b, -alpha, -color)
+        else:
+            score, _ = negascout(new_board, depth - 1, -b, -alpha - 1, -color)
+            if alpha < score < beta:
+                score, _ = negascout(new_board, depth - 1, -beta, -score, -color)
+
+        if alpha >= beta:
+            killer_moves.append((piece, move))
+            break
+
+        value = -score
+        if value > alpha:
+            alpha = value
+            best_move = (piece, move)
+
+        if alpha >= beta:
+            break
+        b = alpha + 1
+
+    for piece, move in ordered_moves:
+        target_square = (piece.x + move[0], piece.y + move[1])
+        move_history[target_square[1]][target_square[0]] -= 1
+
+    killer_moves_history[depth] = killer_moves
+
+    if not ordered_moves:
+        score = evaluate_board(board, color)
+        store_transposition(hash_value, color, score)
+        return score, None
+
+    store_transposition(hash_value, color, alpha)
+    return alpha, best_move
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
