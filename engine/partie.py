@@ -2,6 +2,7 @@ import chess_utils
 from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
 import bots.negamax as negamax
 import time
+import endgame_and_opening_move_finder
 
 class Partie():
     def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1, mode="manuel"):
@@ -85,6 +86,8 @@ class Partie():
                         print(
                             f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(self.grille)}")
                         inp_coup = input("Sélectionner le coup choisi :")
+
+
                         # r pour recommencer, si on ne veut plus jouer cette pièce
                         if inp_coup == "r":
                             continue
@@ -106,27 +109,141 @@ class Partie():
                         i+=1
                         alpha = -float('inf')
                         beta = float('inf')
-                        depth = 8  # choose a suitable search depth
+                        depth = 4
+
                         # call negamax to find the best move
                         if self.tour == "blanc":
                             couleur = 1
                         else:
                             couleur = -1
                         start_time = time.time()
-                        negamax.init_transposition()
-                        best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur,
-                                                                            alpha=-100000,
-                                                                            beta=+100000)
+                        opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille, self.tour)
+                        if opening:
+                            piece, move = opening
+                            best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
+                        else:
+                            if len(chess_utils.liste_pieces_bougeables(self.grille, self.tour)) + len(
+                                    chess_utils.liste_pieces_bougeables(self.grille, chess_utils.couleur_oppose(
+                                            self.tour))) <= 7 and not chess_utils.check_si_roi_restant(self.grille):
+                                meilleur_coup = endgame_and_opening_move_finder.get_best_endgame_move_from_tablebase(
+                                    self.grille, self.tour)
+                                if meilleur_coup:
+                                    piece, move = meilleur_coup
+                                    best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
+                                else:
+                                    negamax.init_transposition()
+                                    #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
+                                    best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
+                                                                                                 depth)
+
+                            else:
+                                negamax.init_transposition()
+                                #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
+                                best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
+                                                                                             depth)
+                        best_piece, best_move = best_combo
                         print(best_score)
                         end_time = time.time()
                         total_time = end_time - start_time
 
                         print(f"Time taken: {total_time} seconds")
-                        best_piece, best_move = best_combo
+
                         print(best_combo)
                         best_piece: Roi
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
                         chess_utils.montrer_grille(self.grille)
+                    if self.mode == "semi-auto":
+                        if self.tour == "noir":
+                            inp_piece = input("Sélectionner une pièce :")
+                            # q pour "quitter"
+                            if inp_piece == "q":
+                                self.terminee = True
+                                break
+                            # p pour "points"
+                            if inp_piece == "p":
+                                print(self.points_blanc, self.points_noir)
+                                continue
+                            # Récupère le contenu de la case aux corrdonées données
+                            try:
+                                piece_selectionner: Piece = chess_utils.get_piece(self.grille,
+                                                                                  int(inp_piece.split(',')[0]),
+                                                                                  int(inp_piece.split(',')[1]))
+                            except ValueError:
+                                piece_selectionner = None
+                            # Si le joueur à sélectionner une case vide, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
+                            if not piece_selectionner:
+                                print("Erreur, la case sélectionnée est vide.")
+                                continue
+                            # Si le joueur à sélectionner une pièce de son adversaire à jouer, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
+                            if piece_selectionner.couleur != self.tour:
+                                print("Cette pièce n'est pas votre")
+                                continue
+                            print(f"Vous avez sélectionné {piece_selectionner.type_de_piece}")
+                            print(
+                                f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(self.grille)}")
+                            inp_coup = input("Sélectionner le coup choisi :")
+
+                            # r pour recommencer, si on ne veut plus jouer cette pièce
+                            if inp_coup == "r":
+                                continue
+                            coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
+                                                           self.grille)
+                            # boucle qui s'active que si le coup envoyé par le joueur n'est pas dans la liste des coups possibles, et donc redemande un coup au joueur,
+                            # jusqu'à ce qu'il envoie un coup valide
+                            while not coup:
+                                inp_coup = input("Sélectionner nouvelle coordonnées :")
+                                coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
+                                                               self.get_grille())
+                                print(coup)
+                            print(f"Vous avez jouer {inp_coup}")
+                            # Met à jour le plateau après le mouvement
+                            self.grille = coup
+                            chess_utils.montrer_grille(self.grille)
+                        else:
+                            alpha = -float('inf')
+                            beta = float('inf')
+                            depth = 4
+                            # call negamax to find the best move
+                            if self.tour == "blanc":
+                                couleur = 1
+                            else:
+                                couleur = -1
+                            start_time = time.time()
+                            opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille,
+                                                                                                      self.tour)
+                            if opening:
+                                piece, move = opening
+                                best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
+                            else:
+                                if len(chess_utils.liste_pieces_bougeables(self.grille, self.tour)) + len(
+                                        chess_utils.liste_pieces_bougeables(self.grille, chess_utils.couleur_oppose(
+                                            self.tour))) <= 7 and not chess_utils.check_si_roi_restant(self.grille):
+                                    meilleur_coup = endgame_and_opening_move_finder.get_best_endgame_move_from_tablebase(
+                                        self.grille, self.tour)
+                                    if meilleur_coup:
+                                        piece, move = meilleur_coup
+                                        best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
+                                    else:
+                                        negamax.init_transposition()
+                                        #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
+                                        best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, depth, couleur)
+                                else:
+                                    negamax.init_transposition()
+                                    # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
+                                    best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur, depth)
+
+                            best_piece, best_move = best_combo
+                            print(best_score)
+                            end_time = time.time()
+                            total_time = end_time - start_time
+
+                            print(f"Time taken: {total_time} seconds")
+                            print(best_combo)
+                            best_piece: Roi
+                            self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
+                            chess_utils.montrer_grille(self.grille)
+
+
                     #change le tour
                     if self.tour == "blanc":
                         self.tour = "noir"
@@ -134,16 +251,11 @@ class Partie():
                         self.tour = "blanc"
                     self.points_blanc, self.points_noir = chess_utils.points(self.grille)
                     #s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
-                    echec_et_mat = chess_utils.check_si_echec_et_mat(p.grille)
+                    echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
                     if echec_et_mat:
-                        print(f"Partie terminée! Les vainqueurs sont les {echec_et_mat} par échec et mat")
+                        print(
+                            f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(self.grille)} par capture du roi")
                         self.terminee = True
-                    else:
-                        echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
-                        if echec_et_mat:
-                            print(
-                                f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(self.grille)} par capture du roi")
-                            self.terminee = True
 
                     if chess_utils.roi_contre_roi(self.grille):
                         print("Egalité ! Il ne reste que des rois sur le plateau.")
@@ -154,7 +266,9 @@ class Partie():
 
 #Partie exemple
 p = Partie()
-p.setup_from_fen("4r3/8/k7/7n/8/5qP1/5P1P/5K2")
+p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+#chess_utils.montrer_grille(p.grille)
+#print(endgame_move_finder.board_to_fen(p.grille))
 #print(negamax.evaluate_board(p.grille, 1))
 p.mode = "auto"
 p.run()

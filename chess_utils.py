@@ -77,23 +77,6 @@ def check_si_roi_restant(grille):
     else:
         return False
 
-def check_si_echec_et_mat(grille):
-    for i in range(-1,2,2):
-
-        couleur_str = get_couleur_str(i)
-        oppose_str = get_couleur_str(-i)
-        coups_rois = [(piece, move) for piece, move in liste_coups_legaux(couleur_str, grille) if piece.type_de_piece == "roi"]
-        coups_rois = list(set(coups_rois))
-        coups_legaux_opposes = liste_coups_legaux(oppose_str, grille)
-        for piece, move in coups_legaux_opposes:  # Iterate over a copy of capturable list to safely remove elements
-            attacked_pos = (piece.x + move[0], piece.y + move[1])
-            for ally_piece, ally_move in coups_rois[:]:
-                if attacked_pos == (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
-                    coups_rois.remove((ally_piece, ally_move))
-                    break
-        if len(coups_rois) == 0:
-            return oppose_str
-    return None
 
 def montrer_grille(grille):
     for i in grille:
@@ -148,6 +131,14 @@ def liste_pieces_en_capture(grille, couleur:int):
                     capturable.remove((piece, move))
                     break
     return capturable
+
+def couleur_oppose(couleur:str):
+    if  couleur == "blanc":
+        return "noir"
+    elif couleur == "noir":
+        return "blanc"
+    else:
+        return None
 
 
 

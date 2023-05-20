@@ -243,6 +243,8 @@ class Pion(Piece):
             else:
                 return grille
         else:
+            from engine import endgame_and_opening_move_finder
+            print(endgame_and_opening_move_finder.board_to_fen(grille, self.couleur))
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
             return None
 
@@ -343,7 +345,7 @@ class Tour(Piece):
                         new_patterne.append((x, y))
                         break
                     else:
-                        pass
+                        break
                 #ajoute 1 aux directions pour que si la pièce n'a pas atteint une case non vide, elle essaye la prochaine case
                 if x > 0:
                     x += 1
