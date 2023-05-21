@@ -351,7 +351,6 @@ def store_transposition(hash_value, color, score):
         transposition_table[hash_value] = {}
     transposition_table[hash_value][color] = score
 
-pv_moves = []
 
 def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=False, pv_move=None):
     king_captures = []
@@ -388,11 +387,18 @@ def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=
 
     # Add the principal variation move to the beginning of the move list if it exists
     if pv_move is not None:
-        ordered_moves = [pv_move] + king_captures + killer_moves + other_captures + quiet_moves
-    else:
-        ordered_moves = king_captures + best_moves_from_inferior_depth + killer_moves + other_captures + quiet_moves
+        if iterative_deepning:
+            ordered_moves = king_captures + best_moves_from_inferior_depth + [pv_move]   + killer_moves + other_captures + quiet_moves
+        else:
+            ordered_moves = king_captures + [pv_move]   + killer_moves + other_captures + quiet_moves
 
+    else:
+        if iterative_deepning:
+            ordered_moves = king_captures + best_moves_from_inferior_depth + killer_moves + other_captures + quiet_moves
+        else:
+            ordered_moves = king_captures + killer_moves + other_captures + quiet_moves
     return ordered_moves
+
 
 
 def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, initial_depth=4):
@@ -414,14 +420,13 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
     best_move = None
     b = beta
 
-
     all_moves = chess_utils.liste_coups_legaux(couleur, board)
     killer_moves = killer_moves_history[depth]  # Retrieve killer moves
+
     if depth == initial_depth:
-        ordered_moves = move_ordering(all_moves, board, couleur, killer_moves, True)
+        ordered_moves = move_ordering(all_moves, board, couleur, killer_moves, True, best_move)
     else:
         ordered_moves = move_ordering(all_moves, board, couleur, killer_moves)
-
 
     for piece, move in ordered_moves:
         new_board = copy.deepcopy(board)
@@ -430,6 +435,23 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
         target_square = (piece.x + move[0], piece.y + move[1])
         target_piece = new_board[target_square[1]][target_square[0]]
         move_history[target_square[1]][target_square[0]] += 1
+
+        # Futility pruning condition
+        futility_margin = 400  # Adjust this value as needed
+
+        if b == beta or b == alpha + 1:
+            score, _ = negascout(new_board, depth - 1, -b, -alpha, -color, initial_depth)
+        else:
+            score, _ = negascout(new_board, depth - 1, -b, -alpha - 1, -color, initial_depth)
+            if alpha < score < beta:
+                score, _ = negascout(new_board, depth - 1, -beta, -score, -color, initial_depth)
+
+        if alpha >= beta:
+            killer_moves.append((piece, move))
+            break
+
+        # Futility pruning condition
+        futility_margin = 100  # Adjust this value as needed
 
         if b == beta or b == alpha + 1:
             score, _ = negascout(new_board, depth - 1, -b, -alpha, -color, initial_depth)
@@ -446,9 +468,13 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
         if value > alpha:
             alpha = value
             best_move = (piece, move)
+        if depth == 2 and alpha + futility_margin <= beta:  # Compare with beta
+            continue
+
 
         if alpha >= beta:
             break
+
         b = alpha + 1
 
     for piece, move in ordered_moves:
@@ -462,8 +488,11 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
         store_transposition(hash_value, color, score)
         return score, None
 
+
+
     store_transposition(hash_value, color, alpha)
     return alpha, best_move
+
 
 def iterative_deepening_negamax(board, couleur, final_depth):
     global best_moves_from_inferior_depth, transposition_table, zobrist

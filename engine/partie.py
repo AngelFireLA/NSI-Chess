@@ -109,7 +109,7 @@ class Partie():
                         i+=1
                         alpha = -float('inf')
                         beta = float('inf')
-                        depth = 4
+                        depth = 6
 
                         # call negamax to find the best move
                         if self.tour == "blanc":
@@ -139,8 +139,7 @@ class Partie():
                             else:
                                 negamax.init_transposition()
                                 #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                                best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
-                                                                                             depth)
+                                best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur, depth)
                         best_piece, best_move = best_combo
                         print(best_score)
                         end_time = time.time()
