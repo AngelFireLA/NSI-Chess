@@ -1,16 +1,11 @@
-import json
-
-import chess_utils
 from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
-
-
-import requests
 
 import time
 import requests
 import json
 
-
+#Utilise l'api de lichess pour récupérer le meilleur coup de fin de partie
+#Api obligatoire car pour 7 pièces restantes, c'est plus d'un terraoctet de stockage
 def get_best_endgame_move_from_tablebase(board, couleur, variant="standard"):
     url = f"http://tablebase.lichess.ovh/{variant}"
     fen = board_to_fen(board, couleur)
@@ -45,6 +40,7 @@ def get_best_endgame_move_from_tablebase(board, couleur, variant="standard"):
 import chess
 import chess.polyglot
 
+#Récupère si possible un coup en provenance d'un énorme variété d'ouverture selon le plateau
 def get_best_move_from_opening_book(grille, couleur):
     board = chess.Board(fen = board_to_fen(grille, couleur, status="ouverture"))
     with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
@@ -55,7 +51,7 @@ def get_best_move_from_opening_book(grille, couleur):
         except IndexError:
             return None
 
-
+#Transforme la liste plateau en string FEN pour les fonctions le nécessitant
 def board_to_fen(board, couleur, status="endgame"):
     fen = ''
     for row in board:
@@ -93,6 +89,7 @@ def symbol_from_piece(piece):
     else:
         return piece_symbol_dict[type(piece)]
 
+#Convertit un coup en notation chess en notation custom
 def convert_move(chess_move):
     chess_move = str(chess_move)
     # Extract source and destination squares

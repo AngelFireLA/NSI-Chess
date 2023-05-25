@@ -20,6 +20,7 @@ def get_piece_type(grille: list, x:int, y:int):
     else:
         return None
 
+
 def get_couleur_str(couleur:int):
     couleur_str = None
     if couleur == 1:
@@ -28,12 +29,13 @@ def get_couleur_str(couleur:int):
         couleur_str = "noir"
     return couleur_str
 
+#Récupérer la liste de pièces bougeables pour un camp dans une position
 def liste_pieces_bougeables(grille, couleur: str) -> list:
     return [
         j for i in grille for j in i if j and j.couleur == couleur
     ]
 
-
+#Récupère toutes les pièces autour d'une piéce donnée dans un rayon donné
 def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
     debut_ligne = max(y - rayon, 0)
     fin_ligne = min(y + rayon + 1, len(grille))
@@ -47,7 +49,7 @@ def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
     liste = [elem for elem in liste if elem and not (elem.x, elem.y) == (x, y)]
     return liste
 
-
+#Récupère toutes les pièces et récupèrent chacun tous les coups possibles
 def liste_coups_legaux(couleur, grille, peux_capturer_allier=False):
     pieces = liste_pieces_bougeables(grille, couleur)
     if peux_capturer_allier:
@@ -60,6 +62,7 @@ def liste_coups_legaux(couleur, grille, peux_capturer_allier=False):
         ]
     return coups
 
+#Fonction qui détermine si un camp n'a plus de roi
 def check_si_roi_restant(grille):
     compteur_de_roi = {"blanc":0, "noir":0}
     for i in grille:
@@ -77,7 +80,7 @@ def check_si_roi_restant(grille):
     else:
         return False
 
-
+#Montre la grille visuellement plus jolie mais toujours textuelle
 def montrer_grille(grille):
     for i in grille:
         ligne = []
@@ -88,6 +91,7 @@ def montrer_grille(grille):
                 ligne.append(None)
         print(ligne)
 
+#Vérifie s'il ne reste que des rois sur le plateau, donc si c'est égalité
 def roi_contre_roi(grille) -> bool:
     pieces_restantes = []
     for i in grille:
@@ -99,6 +103,7 @@ def roi_contre_roi(grille) -> bool:
             return False
     return True
 
+#Fonctions qui comptent les points de chaque camp
 def points(grille):
     points_blanc = sum([j.valeur for i in grille for j in i if j and j.type_de_piece != "roi" and j.couleur == "blanc"])
     points_noir = sum([j.valeur for i in grille for j in i if j and j.type_de_piece != "roi" and j.couleur == "noir"])
@@ -109,7 +114,7 @@ def points_avec_roi(grille):
     points_noir = sum([j.valeur for i in grille for j in i if j and j.couleur == "noir"])
     return points_blanc, points_noir
 
-
+#Récupère toutes les captures ou promotions possibles pour un camp dans une position donnée
 def possible_captures_ou_promotions(couleur:str, grille):
     all_legal_moves = liste_coups_legaux(couleur, grille)
     return [
@@ -119,6 +124,7 @@ def possible_captures_ou_promotions(couleur:str, grille):
         )
     ]
 
+#Récupérer toutes les pièces qui sont menacée d'un camp spécifique
 def liste_pieces_en_capture(grille, couleur:int):
     couleur_str = get_couleur_str(-couleur)
     nos_coups = liste_coups_legaux(couleur_str, grille, peux_capturer_allier=True)

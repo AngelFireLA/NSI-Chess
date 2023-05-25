@@ -3,6 +3,7 @@ from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
 import bots.negamax as negamax
 import time
 import endgame_and_opening_move_finder
+import chess_interface
 
 class Partie():
     def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1, mode="manuel"):
@@ -60,6 +61,7 @@ class Partie():
                 #Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
                 i = 0
                 while not self.terminee:
+                    #manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
                     if self.mode == "manuel":
                         inp_piece = input("Sélectionner une pièce :")
                         # q pour "quitter"
@@ -109,19 +111,21 @@ class Partie():
                         i+=1
                         alpha = -float('inf')
                         beta = float('inf')
-                        depth = 6
+                        depth = 4
 
-                        # call negamax to find the best move
                         if self.tour == "blanc":
                             couleur = 1
                         else:
                             couleur = -1
+                        #Vérifie si la position est dans le livre d'ouverture, et si oui jouer le coup recommandé
                         start_time = time.time()
                         opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille, self.tour)
                         if opening:
                             piece, move = opening
                             best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
+
                         else:
+                            #S'il y a 7 pièces au moins restantes sur le plateau, utiliser le solveur de fin de partie
                             if len(chess_utils.liste_pieces_bougeables(self.grille, self.tour)) + len(
                                     chess_utils.liste_pieces_bougeables(self.grille, chess_utils.couleur_oppose(
                                             self.tour))) <= 7 and not chess_utils.check_si_roi_restant(self.grille):
@@ -136,10 +140,11 @@ class Partie():
                                     best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
                                                                                                  depth)
 
+                            #utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
                             else:
                                 negamax.init_transposition()
-                                #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
                                 best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur, depth)
+                        #Récupère meilleur pièce, coup et score
                         best_piece, best_move = best_combo
                         print(best_score)
                         end_time = time.time()
@@ -149,9 +154,11 @@ class Partie():
 
                         print(best_combo)
                         best_piece: Roi
+                        #Effectue le meilleur coup trouvé
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
                         chess_utils.montrer_grille(self.grille)
                     if self.mode == "semi-auto":
+                        #c'est juste une combinaison de 2 précédentes qui change selon à qui c'est le tour
                         if self.tour == "noir":
                             inp_piece = input("Sélectionner une pièce :")
                             # q pour "quitter"
@@ -266,8 +273,15 @@ class Partie():
 #Partie exemple
 p = Partie()
 p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
-#chess_utils.montrer_grille(p.grille)
-#print(endgame_move_finder.board_to_fen(p.grille))
-#print(negamax.evaluate_board(p.grille, 1))
+#Mode de la partie, "auto", "semi-auto" ou "manuel"
 p.mode = "auto"
-p.run()
+#On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
+#p.run()
+
+#Soit on peut lancer le jeux avec l'interface graphique, en manuel
+#chess_interface.start_manuel(p)
+
+#Soit on peut lancer le jeux avec l'interface graphique, en semi-auto, donc contre le bot
+DEPTH = 4
+chess_interface.start_semiauto(p, DEPTH)
+
