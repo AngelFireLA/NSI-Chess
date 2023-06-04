@@ -46,8 +46,6 @@ def check_click(surfaces, event):
         return surface, pos  # Store the selected surface
   return None  # Return None if no surface is clicked
 
-
-
 plateau = []
 
 #récupère le coup du bot, similaire à la fonction run() de Partie
@@ -186,6 +184,10 @@ def start_manuel(partie):
         pygame.quit()
         exit()
 
+      #Vérifie si une pièce est cliquée
+      if check_click(pieces, event):
+        selected = check_click(pieces, event)
+
       if event.type == pygame.MOUSEBUTTONUP:
         mouse_pos = pygame.mouse.get_pos()
         for square_rect in selected_squares:
@@ -197,7 +199,6 @@ def start_manuel(partie):
             partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
 
             chess_utils.montrer_grille(partie.grille)
-
             #Reset les variables pour attendre la prochaine pièce à sélectionner
             selected_piece = None
             selected = None
@@ -206,9 +207,6 @@ def start_manuel(partie):
             moved = True
             break
 
-      #Vérifie si une pièce est cliquée
-      if check_click(pieces, event):
-        selected = check_click(pieces, event)
 
     partie.points_blanc, partie.points_noir = chess_utils.points(partie.grille)
     # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
@@ -238,7 +236,7 @@ def start_manuel(partie):
 
 
 #Fonction qui lance le jeu en mode joueur contre bot
-def start_semiauto(partie, chosen_depth):
+def start_semiauto(partie, chosen_depth, start_tour:str):
   global DEPTH
   DEPTH = chosen_depth
   from engine.partie import Partie
@@ -313,14 +311,17 @@ def start_semiauto(partie, chosen_depth):
             partie.tour = chess_utils.couleur_oppose(partie.tour)
             break
 
-      if check_click(pieces, event) and partie.tour == "blanc":
+      if check_click(pieces, event) and partie.tour == start_tour:
         selected = check_click(pieces, event)
       #Si pas de pièces sont séléctionnée et que c'est aux noirs donc au bot
-      elif not selected and partie.tour == "noir":
+      elif not selected and partie.tour == chess_utils.couleur_oppose(start_tour):
+        selected_bot = True
         #Affiche le emssage d'attente pendant que le bot choisi le coup
         fenetre_originale = fenetre.copy()
         fenetre.fill((255, 255, 255))
-        bot_reflechit = afficher_text(fenetre, "Le bot réfléchit au meilleur coup...", fenetre.get_width(), fenetre.get_height(), 50, "Impact", center=True)
+        bot_reflechit = afficher_text(fenetre, "Le bot réfléchit au meilleur coup...",
+                                      fenetre.get_width(), fenetre.get_height(), 50,
+                                      "Impact", center=True)
         fenetre.blit(bot_reflechit[0], bot_reflechit[1])
         pygame.display.flip()
 

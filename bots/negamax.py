@@ -1,17 +1,16 @@
 import random
-
 import chess_utils
 from engine.pieces.piece import Roi
 import copy
 
 #Les pièces sont plus ou moins fortes selon leur position, cela aide le bot à comprendre où il faudrait mieux placer les pièces.
 piece_values = {
-    "pion": 100,
-    "cavalier": 320,
-    "fou": 330,
-    "tour": 500,
-    "dame": 900,
-    "roi": 20000
+    "pion": 200,
+    "cavalier": 620,
+    "fou": 630,
+    "tour": 1000,
+    "dame": 1800,
+    "roi": 99999999999
 }
 
 multiplier = 1
@@ -84,12 +83,12 @@ white_pawn_table = [
 
 
 #Inverse les tables pour les noirs
-black_knight_table = [row[::-1] for row in white_knight_table]
-black_bishop_table = [row[::-1] for row in white_bishop_table]
-black_rook_table = [row[::-1] for row in white_rook_table]
-black_queen_table = [row[::-1] for row in white_queen_table]
-black_king_table = [row[::-1] for row in white_king_table]
-black_pawn_table = [row[::-1] for row in white_pawn_table]
+black_knight_table = [row[::-1] for row in white_knight_table[::-1]]
+black_bishop_table = [row[::-1] for row in white_bishop_table[::-1]]
+black_rook_table = [row[::-1] for row in white_rook_table[::-1]]
+black_queen_table = [row[::-1] for row in white_queen_table[::-1]]
+black_king_table = [row[::-1] for row in white_king_table[::-1]]
+black_pawn_table = [row[::-1] for row in white_pawn_table[::-1]]
 
 
 
@@ -113,18 +112,15 @@ piece_tables = {
 }
 
 #Fonction pour évaluer le plateau, très importante car c'est grâce à elle que le bot sait si il gagne ou pas
+
+#pip install functools
+#@cache
 def evaluate_board(grid, couleur: int):
     score_blanc, score_noir = 0, 0
 
     #vérifie s'il n'y a pas pat  :
     pieces_enemies = chess_utils.liste_pieces_bougeables(grid, -couleur)
-    if  len(pieces_enemies) == 1 and pieces_enemies[0].type_de_piece == "roi" and pieces_enemies[0].liste_coups_legaux(grid) == []:
-        if couleur == 1:
-            score_blanc-=10000000
-            score_noir += 10000000
-        else:
-            score_blanc+=10000000
-            score_noir -= 10000000
+    nb_pieces = chess_utils.nb_pieces_restantes(grid)
 
     #Calcule l'équilibre des points
     points_blanc, points_noir = chess_utils.points_avec_roi(grid)
@@ -132,25 +128,7 @@ def evaluate_board(grid, couleur: int):
     score_noir+=points_noir
 
 
-
-
-
-    #Compte le nombre de cases contrôlées car avoir plus de cases contrôlées est un petit avantage
-    coups = {"blanc": chess_utils.liste_coups_legaux("blanc", grid),
-             "noir": chess_utils.liste_coups_legaux("noir", grid)}
-    cases_controlees = set()
-    cases_par_couleur = {"blanc": 0, "noir": 0}
-    for c in coups:
-        for piece, coup in coups[c]:
-            case = (piece.x + coup[0], piece.y + coup[1])
-            if case not in cases_controlees:
-                cases_controlees.add(case)
-                cases_par_couleur[c] += 1
-
-    score_blanc += cases_par_couleur["blanc"]*0.1
-    score_noir +=  cases_par_couleur["noir"]*0.1
-
-    #Fonction qui calcule la sureté du roi selon divers facteurs
+    # Fonction qui calcule la sureté du roi selon divers facteurs
     for l in range(-1,2, 2):
         #récupère le roi
         pieces = []
@@ -224,7 +202,7 @@ def evaluate_board(grid, couleur: int):
         else:
             score_noir+=king_safety
 
-    #Calcule le score pour une structure de pions correctes
+    # Calcule le score pour une structure de pions correctes
     for i in range(-1, 2, 2):
         isolated_pions_score = 0
         doubled_pions_score = 0
@@ -277,15 +255,15 @@ def evaluate_board(grid, couleur: int):
             score_noir += pion_structure_score
 
     # Donne les points selon la position de chaque pièce selon le tableau
-
-    for i in range(-1,2, 2):
-        for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(i)):
-            if piece.couleur == "blanc":
-                score_blanc+=(piece_tables["blanc"][piece.type_de_piece][piece.y][piece.x])
-            else:
-                score_noir += (piece_tables["noir"][piece.type_de_piece][piece.y][piece.x])
+    for piece in chess_utils.liste_pieces_restantes(grid):
+        if piece.couleur == "blanc":
+            score_blanc+=(piece_tables["blanc"][piece.type_de_piece][piece.y][piece.x])
+        else:
+            score_noir += (piece_tables["noir"][piece.type_de_piece][piece.y][piece.x])
     #Retourne le score finale multiplier par la valeur de la couleur car un score négatif est bon pour noir
-    return (score_blanc-score_noir)*couleur
+    evaluation = (score_blanc - score_noir) * couleur
+
+    return evaluation
 
 
 # Initialize divers variables utilisées dans l'algorithme pour réduire le temps de recherche
@@ -352,8 +330,6 @@ def store_transposition(hash_value, color, score):
 #Fonction qui ordonne les mouvements selon leur probabilité d'être bon puisque si l'algorithme regarde d'abord les coups bons, il s'arrêtera plus vite.
 def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=False, pv_move=None):
     #captures de roi (donc echec et mat)
-    king_captures = []
-
     other_captures = []
     quiet_moves = set()
 
@@ -361,19 +337,15 @@ def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=
 
     for piece, move in piece_moves:
         if (piece, move) in capture_moves:
-            if piece.type_de_piece == "roi":
-                king_captures.append((piece, move))
-            else:
-                # Calculate the value of the captured piece and the attacking piece
-                target_square = (piece.x + move[0], piece.y + move[1])
-                target_piece = board[target_square[1]][target_square[0]]
-                captured_piece_value = target_piece.valeur if target_piece else 0
-                attacking_piece_value = piece.valeur
+            target_square = (piece.x + move[0], piece.y + move[1])
+            target_piece = board[target_square[1]][target_square[0]]
+            captured_piece_value = target_piece.valeur if target_piece else 0
+            attacking_piece_value = piece.valeur
 
-                # Utilise MVV/LVA (Most Valuable Victim/Least Valuable Attacker) pour trouver les échanges les plus profitables
-                score = captured_piece_value - attacking_piece_value
+            # Utilise MVV/LVA (Most Valuable Victim/Least Valuable Attacker) pour trouver les échanges les plus profitables
+            score = captured_piece_value - attacking_piece_value
 
-                other_captures.append((piece, move, score))
+            other_captures.append((piece, move, score))
         else:
             quiet_moves.add((piece, move))
 
@@ -388,15 +360,15 @@ def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=
     # Ajoute le mouvement de variation principale au début de la liste des mouvements s'il existe.
     if pv_move is not None:
         if iterative_deepning:
-            ordered_moves = king_captures + best_moves_from_inferior_depth + [pv_move]   + killer_moves + other_captures + quiet_moves
+            ordered_moves = best_moves_from_inferior_depth + [pv_move]  + killer_moves + other_captures + quiet_moves
         else:
-            ordered_moves = king_captures + [pv_move]   + killer_moves + other_captures + quiet_moves
+            ordered_moves = [pv_move]  + killer_moves + other_captures + quiet_moves
 
     else:
         if iterative_deepning:
-            ordered_moves = king_captures + best_moves_from_inferior_depth + killer_moves + other_captures + quiet_moves
+            ordered_moves = best_moves_from_inferior_depth + killer_moves + other_captures + quiet_moves
         else:
-            ordered_moves = king_captures + killer_moves + other_captures + quiet_moves
+            ordered_moves = killer_moves + other_captures + quiet_moves
     return ordered_moves
 
 
@@ -410,12 +382,13 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
     #Récupère si possible le score de al table de transposition
     hash_value = zobrist_hash(board)
     cached_score = get_transposition_entry(hash_value, color)
-    if cached_score is not None:
-        return cached_score, None
 
     #Si la partie est fini ou si la recherche a atteint son maximum
     if depth == 0 or chess_utils.check_si_roi_restant(board):
-        score = evaluate_board(board, color)
+        if cached_score is not None:
+            score = cached_score
+        else:
+            score = evaluate_board(board, color)
         store_transposition(hash_value, color, score)
         return score, None
 
@@ -433,8 +406,9 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
     #Boucle principale qui itère sur les coups
     for piece, move in ordered_moves:
         #On duplique les pièces et le plateau pour ne pas les modifier eux directement
-        new_board = copy.deepcopy(board)
-        new_piece = copy.deepcopy(piece)
+        new_board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
+
+        new_piece = piece.copy()
 
         #On modifie le plateau avec le coup à tester
         new_board = new_piece.move(move[0], move[1], new_board)
@@ -481,10 +455,11 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
     return alpha, best_move
 
 
+
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
 def iterative_deepening_negamax(board, couleur, final_depth):
     global best_moves_from_inferior_depth, transposition_table, zobrist
-    board = copy.deepcopy(board)
+    board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
     best_score = None
     best_moves = []
     for depth in range(2, final_depth + 1, 2):

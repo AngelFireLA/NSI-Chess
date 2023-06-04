@@ -4,6 +4,8 @@ import bots.negamax as negamax
 import time
 import endgame_and_opening_move_finder
 import chess_interface
+import timeit
+
 
 class Partie():
     def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1, mode="manuel"):
@@ -19,8 +21,7 @@ class Partie():
         self.mode = mode
 
     #Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
-    # on peut le générer pour n'importe quel position, facielement en ligne
-    #même moi je me souviens plus comment le code marche car il est compliqué
+    # on peut le générer pour n'importe quel position
     def setup_from_fen(self, fen: str):
         grille = []
         rank_strings = fen.split('/')
@@ -111,7 +112,7 @@ class Partie():
                         i+=1
                         alpha = -float('inf')
                         beta = float('inf')
-                        depth = 4
+                        depth = 6
 
                         if self.tour == "blanc":
                             couleur = 1
@@ -159,7 +160,7 @@ class Partie():
                         chess_utils.montrer_grille(self.grille)
                     if self.mode == "semi-auto":
                         #c'est juste une combinaison de 2 précédentes qui change selon à qui c'est le tour
-                        if self.tour == "noir":
+                        if self.tour == "blanc":
                             inp_piece = input("Sélectionner une pièce :")
                             # q pour "quitter"
                             if inp_piece == "q":
@@ -273,15 +274,56 @@ class Partie():
 #Partie exemple
 p = Partie()
 p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
-#Mode de la partie, "auto", "semi-auto" ou "manuel"
-p.mode = "auto"
+# import cProfile
+# import pstats
+#
+# negamax.init_transposition()
+#
+# if p.tour == "blanc":
+#     couleur = 1
+# else:
+#     couleur = -1
+#
+# with cProfile.Profile() as pr:
+#     best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur,
+#                                                                  4)
+# print(best_score, best_combo)
+# stats = pstats.Stats(pr)
+# stats.sort_stats(pstats.SortKey.TIME)
+# stats.print_stats()
+
+#"auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
+p.mode = "semi-auto"
+
 #On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
 #p.run()
+
+
+
 
 #Soit on peut lancer le jeux avec l'interface graphique, en manuel
 #chess_interface.start_manuel(p)
 
-#Soit on peut lancer le jeux avec l'interface graphique, en semi-auto, donc contre le bot
-DEPTH = 4
-chess_interface.start_semiauto(p, DEPTH)
+#Soit on peut le lancer, en semi-auto donc contre le bot
+DEPTH = 4 #Nombre de coup à voir dans le futur,
+chess_interface.start_semiauto(p, DEPTH, "blanc")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

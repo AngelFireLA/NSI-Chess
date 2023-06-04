@@ -1,4 +1,4 @@
-import copy
+
 #Récupère la pièece, ou si la case vide, à une case donnée d'une grille donnée
 def get_piece(grille: list, x:int, y:int):
     """
@@ -10,7 +10,7 @@ def get_piece(grille: list, x:int, y:int):
     else:
         return None
 
-#Pareille que celle d'en haut sauf que ça retourne le type de la pièce s'il y en a une
+#Pareille mais retourne le type de la pièce à la place s'il y en a une
 def get_piece_type(grille: list, x:int, y:int):
     """
     @type piece: lysandre.pieces.piece.Piece
@@ -20,7 +20,6 @@ def get_piece_type(grille: list, x:int, y:int):
     else:
         return None
 
-
 def get_couleur_str(couleur:int):
     couleur_str = None
     if couleur == 1:
@@ -29,11 +28,29 @@ def get_couleur_str(couleur:int):
         couleur_str = "noir"
     return couleur_str
 
+def get_couleur_int(couleur:str):
+    couleur_int = None
+    if couleur == "blanc":
+        couleur_int = 1
+    elif couleur == "noir":
+        couleur_int = -1
+    return couleur_int
+
 #Récupérer la liste de pièces bougeables pour un camp dans une position
 def liste_pieces_bougeables(grille, couleur: str) -> list:
     return [
         j for i in grille for j in i if j and j.couleur == couleur
     ]
+
+def liste_pieces_restantes(grille) -> list:
+    return [
+        j for i in grille for j in i if j
+    ]
+
+def nb_pieces_restantes(grille) -> int:
+    return len([
+        j for i in grille for j in i if j
+    ])
 
 #Récupère toutes les pièces autour d'une piéce donnée dans un rayon donné
 def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
@@ -103,12 +120,13 @@ def roi_contre_roi(grille) -> bool:
             return False
     return True
 
-#Fonctions qui comptent les points de chaque camp
+#Fonctions qui comptent les points de chaque camp sans compter les rois
 def points(grille):
     points_blanc = sum([j.valeur for i in grille for j in i if j and j.type_de_piece != "roi" and j.couleur == "blanc"])
     points_noir = sum([j.valeur for i in grille for j in i if j and j.type_de_piece != "roi" and j.couleur == "noir"])
     return points_blanc, points_noir
 
+#Fonctions qui comptent les points de chaque camp en comptant les rois
 def points_avec_roi(grille):
     points_blanc = sum([j.valeur for i in grille for j in i if j and j.couleur == "blanc"])
     points_noir = sum([j.valeur for i in grille for j in i if j and j.couleur == "noir"])
@@ -120,9 +138,10 @@ def possible_captures_ou_promotions(couleur:str, grille):
     return [
         (piece, move) for piece, move in all_legal_moves
         if not points_avec_roi(grille) == points_avec_roi(
-            copy.deepcopy(piece).move(move[0], move[1], copy.deepcopy(grille))
+            piece.copy().move(move[0], move[1],[[piece.copy() if piece is not None else None for piece in row] for row in grille])
         )
     ]
+
 
 #Récupérer toutes les pièces qui sont menacée d'un camp spécifique
 def liste_pieces_en_capture(grille, couleur:int):

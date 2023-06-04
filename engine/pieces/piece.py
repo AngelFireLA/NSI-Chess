@@ -1,52 +1,23 @@
 import chess_utils
 
-#Vérifie si le type d'une pièce créer est valide
-def type_valide(type_de_piece) -> bool:
-    if not (type == "pion", type == "tour", type == "cavalier", type == "fou", type == "dame", type == "roi"):
-        return False
-    else:
-        return True
 
 # classe de base qui sera héritée par toute les pièces
 class Piece():
-    def __init__(self, couleur: str, capturee: bool == False, type_de_piece: str, x: int, y: int, valeur: int):
-        # couleur de la pièce
-        if couleur.lower() == "blanc" or couleur.lower() == "noir":
-            self.couleur = couleur
-        else:
-            print("Une pièce a été définie avec une couleur invalide.")
-
-        # position de la pièce sur la grille de 8x8 avec x en abscisse et y en ordonnée, allant de 0 jusqu'à 7
-        self.x, self.y = x, y
-
-        # Piece est capturée ou pas
-        self.capturee = capturee
-
-        # le type de la pièce
-        if not type_valide(type_de_piece):
-            print("Une pièce a été définie avec un type invalide.")
-        else:
-            self.type_de_piece = type_de_piece
-
-        # vérifie si la pièce a déja bougée
-        self.moved = False
-
-        #Valeur de la pièce, propre à chaque pièce
-        self.valeur = valeur
-
-    #Change le type de pièce
-    def set_type(self, type_de_piece):
-        self.type_de_piece = type_de_piece
-
-    #Change la couleur de la pièce
-    def set_color(self, couleur):
+    def __init__(self, couleur: str, type_de_piece: str, x: int, y: int, valeur: int):
         self.couleur = couleur
+        self.x, self.y = x, y
+        self.type_de_piece = type_de_piece
+        self.moved = False
+        self.valeur = valeur
 
 
 class Roi(Piece):
-    def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "roi", x, y, 20000)
-
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "roi", x, y, 99999999999)
+    def copy(self):
+        new_piece = Roi(self.couleur,  self.x, self.y)
+        new_piece.moved = self.moved
+        return new_piece
     #Pareil pour toutes les pièces : Récupère tout les mouvements possible s'il  avait 0 pièces autour de la pièce, et autres coups spéciaux
     #Vérifie aussi si la pièce ne vas pas en dehors du plateau
     def get_patterne_possible(self, x, y):
@@ -161,25 +132,25 @@ class Roi(Piece):
             return grille
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            chess_utils.montrer_grille(grille)
-            return None
 
     def capture(self, piece_capturee: Piece):
-        piece_capturee.capturee = True
+
         # met la pièce capturée en (-1, -1) pour dire qu'elle n'est plus dans le plateau
         piece_capturee.x = -1
         piece_capturee.y = -1
 
 class Pion(Piece):
-    def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "pion", x, y, 100)
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "pion", x, y, 100)
+    def copy(self):
+        new_piece = Pion(self.couleur,  self.x, self.y)
 
+        return new_piece
     def get_patterne_possible(self, grille: list):
         if self.couleur == "blanc":
             patterne = []
             # verifie si une piece is devant le pion:
             if not grille[self.y - 1][self.x]:
-                # todo : vérifier s'il peut pas en passant
                 patterne.append((0, -1))
             #si le pion est sur la bonne ligne et pas de pièces devant, lui laisse avancé de 2 cases
             if self.y == 6 and not chess_utils.get_piece(grille, self.x, 4) and not chess_utils.get_piece(grille, self.x, 5):
@@ -189,7 +160,6 @@ class Pion(Piece):
             #pareil mais si le pion est noir
             patterne = []
             if not grille[self.y + 1][self.x]:
-                # todo : vérifier s'il peut pas en passant
                 patterne.append((0, +1))
             if self.y == 1 and not chess_utils.get_piece(grille, self.x, 3) and not chess_utils.get_piece(grille, self.x, 2):
                 patterne.append((0, +2))
@@ -250,7 +220,7 @@ class Pion(Piece):
 
     def capture(self, piece_capturee: Piece):
         #Code basique de capture
-        piece_capturee.capturee = True
+
         piece_capturee.x = -1
         piece_capturee.y = -1
 
@@ -264,11 +234,13 @@ class Pion(Piece):
         new_piece.moved = True
         return grille
 
-
 class Cavalier(Piece):
-    def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "cavalier", x, y, 320)
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "cavalier", x, y, 320)
+    def copy(self):
+        new_piece = Cavalier(self.couleur, self.x, self.y)
 
+        return new_piece
     #Rien de spécial
     def get_patterne_possible(self):
         patterne = [(+2, +1), (+2, -1), (-2, +1), (-2, -1), (+1, +2), (+1, -2), (-1, +2), (-1, -2)]
@@ -296,7 +268,6 @@ class Cavalier(Piece):
             if grille[self.y + y_added][self.x + x_added]:
                 if grille[self.y + y_added][self.x + x_added].couleur == self.couleur:
                     raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la piéce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-                    return None
                 self.capture(grille[self.y + y_added][self.x + x_added])
             grille[self.y][self.x] = None
             self.x += x_added
@@ -305,19 +276,19 @@ class Cavalier(Piece):
             return grille
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
     def capture(self, piece_capturee: Piece):
-        piece_capturee.capturee = True
+
         piece_capturee.x = -1
         piece_capturee.y = -1
 
-
-
 class Tour(Piece):
-    def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "tour", x, y, 500)
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "tour", x, y, 500)
+    def copy(self):
+        new_piece = Tour(self.couleur,  self.x, self.y)
 
+        return new_piece
     #Pour tour et fou, patterne n'est que 1 dans chaque direction possible
     def get_patterne_possible(self):
         patterne = [(+1, +0), (-1, +0), (+0, +1), (+0, -1)]
@@ -376,17 +347,18 @@ class Tour(Piece):
             return None
 
     def capture(self, piece_capturee: Piece):
-        piece_capturee.capturee = True
+
         # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
         piece_capturee.x = -1
         piece_capturee.y = -1
 
-
-
 class Dame(Piece):
-    def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "dame", x, y, 900)
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "dame", x, y, 900)
+    def copy(self):
+        new_piece = Dame(self.couleur,  self.x, self.y)
 
+        return new_piece
     def get_patterne_possible(self):
         #2 patternes pour les mouvements dont ils sont nommés
         patterne_diagonale = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
@@ -478,17 +450,18 @@ class Dame(Piece):
             return None
 
     def capture(self, piece_capturee: Piece):
-        piece_capturee.capturee = True
+
         # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
         piece_capturee.x = -1
         piece_capturee.y = -1
 
-
-
 class Fou(Piece):
-    def __init__(self, couleur: str, capturee: bool = False, x: int = 0, y: int = 0):
-        super().__init__(couleur, capturee, "fou", x, y, 330)
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "fou", x, y, 330)
+    def copy(self):
+        new_piece = Fou(self.couleur,  self.x, self.y)
 
+        return new_piece
     #pareil que tour presque
     def get_patterne_possible(self):
         patterne = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
@@ -544,7 +517,7 @@ class Fou(Piece):
             return None
 
     def capture(self, piece_capturee: Piece):
-        piece_capturee.capturee = True
+
         # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
         piece_capturee.x = -1
         piece_capturee.y = -1
