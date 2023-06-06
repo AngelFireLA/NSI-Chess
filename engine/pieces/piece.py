@@ -213,10 +213,7 @@ class Pion(Piece):
             else:
                 return grille
         else:
-            from engine import endgame_and_opening_move_finder
-            print(endgame_and_opening_move_finder.board_to_fen(grille, self.couleur))
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
     def capture(self, piece_capturee: Piece):
         #Code basique de capture
@@ -519,6 +516,289 @@ class Fou(Piece):
     def capture(self, piece_capturee: Piece):
 
         # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
+        piece_capturee.x = -1
+        piece_capturee.y = -1
+
+class Goku(Piece):
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "goku", x, y, 640)
+        self.promoted = False
+    def copy(self):
+        new_piece = Goku(self.couleur,  self.x, self.y)
+
+        return new_piece
+
+    def get_patterne_possible(self):
+        patterne_diagonale = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
+        patterne_cavalier = [(+2, +1), (+2, -1), (-2, +1), (-2, -1), (+1, +2), (+1, -2), (-1, +2), (-1, -2)]
+        for i in range(len(patterne_diagonale) - 1, -1, -1):
+            if self.x + patterne_diagonale[i][0] < 0 or self.x + patterne_diagonale[i][0] > 7 or self.y + patterne_diagonale[i][1] < 0 or self.y + \
+                    patterne_diagonale[i][1] > 7:
+                patterne_diagonale.pop(i)
+        for i in range(len(patterne_cavalier) - 1, -1, -1):
+            if self.x + patterne_cavalier[i][0] < 0 or self.x + patterne_cavalier[i][0] > 7 or self.y + patterne_cavalier[i][1] < 0 or self.y + \
+                    patterne_cavalier[i][1] > 7:
+                patterne_cavalier.pop(i)
+        return patterne_diagonale, patterne_cavalier
+
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
+        patterne = self.get_patterne_possible()
+        new_patterne = []
+        #répète les boucles pour les mouvements légaux de la tour et du fou
+        for move in patterne[0]:
+            x = move[0]
+            y = move[1]
+            while True:
+                if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
+                    break
+                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                    new_patterne.append((x, y))
+                else:
+                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
+                        new_patterne.append((x, y))
+                        break
+                    else:
+                        break
+                if x > 0:
+                    x += 1
+                if x < 0:
+                    x -= 1
+                if y > 0:
+                    y += 1
+                if y < 0:
+                    y -= 1
+                if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
+                    break
+        move_illegaux = []
+        for coup in patterne[1]:
+            if grille[self.y + coup[1]][self.x + coup[0]]:
+                if grille[self.y + coup[1]][self.x + coup[0]].couleur == self.couleur and not peut_capturer_allie:
+                    move_illegaux.append(coup)
+        new_patterne.extend([coup for coup in patterne[1] if coup not in move_illegaux])
+        #supprime les coups duppliqués avec list(set(new_patterne))
+        return list(set(new_patterne))
+
+    def move(self, x_added, y_added, grille: list):
+        if (x_added, y_added) in self.liste_coups_legaux(grille):
+            # Code mouvement basique
+            self.moved = True
+            if grille[self.y + y_added][self.x + x_added]:
+                self.capture(grille[self.y + y_added][self.x + x_added])
+            grille[self.y][self.x] = None
+            self.x += x_added
+            self.y += y_added
+            grille[self.y][self.x] = self
+            # Code gérant la promotion en dame
+            if (self.couleur == "blanc" and self.y == 0) or (self.couleur == "noir" and self.y == 7) and not self.promoted:
+                self.promoted = True
+                return self.promote(grille)
+            else:
+                return grille
+        else:
+            raise ValueError(
+                f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
+
+    def capture(self, piece_capturee: Piece):
+
+        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
+        piece_capturee.x = -1
+        piece_capturee.y = -1
+
+    #Fonction gérant la promotion du pion
+    def promote(self, n_grille: list):
+        pieces_enemies = chess_utils.liste_pieces_bougeables(n_grille, chess_utils.couleur_oppose(self.couleur))
+        import random
+        piece_a_capturer = random.choice(pieces_enemies)
+        n_grille[piece_a_capturer.y][piece_a_capturer.x] = None
+        self.capture(piece_a_capturer)
+        return n_grille
+
+class Vegeta(Piece):
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "vegeta", x, y, 900)
+        self.promoted = False
+        self.promoting = False
+    def copy(self):
+        new_piece = Vegeta(self.couleur,  self.x, self.y)
+
+        return new_piece
+    def get_patterne_possible(self):
+        #2 patternes pour les mouvements dont ils sont nommés
+        patterne_diagonale = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
+        patterne_tour = [(+1, +0), (-1, +0), (+0, +1), (+0, -1)]
+        for i in range(len(patterne_diagonale) - 1, -1, -1):
+            if self.x + patterne_diagonale[i][0] < 0 or self.x + patterne_diagonale[i][0] > 7 or self.y + \
+                    patterne_diagonale[i][1] < 0 or self.y + patterne_diagonale[i][1] > 7:
+                patterne_diagonale.pop(i)
+        for i in range(len(patterne_tour) - 1, -1, -1):
+            if self.x + patterne_tour[i][0] < 0 or self.x + patterne_tour[i][0] > 7 or self.y + patterne_tour[i][
+                1] < 0 or self.y + patterne_tour[i][1] > 7:
+                patterne_tour.pop(i)
+        return patterne_diagonale, patterne_tour
+
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
+        if self.promoting:
+            new_patterne = []
+            for ligne in grille:
+                for piece in ligne:
+                    patt_x, patt_y = (ligne.index(piece)-self.x, grille.index(ligne)-self.y)
+                    if patt_x == 0 and patt_y == 0:
+                        continue
+                    if piece and piece.type_de_piece == "roi":
+                        continue
+                    new_patterne.append((patt_x, patt_y))
+            return list(set(new_patterne))
+        patterne = self.get_patterne_possible()
+        new_patterne = []
+        #répète les boucles pour les mouvements légaux de la tour et du fou
+        for move in patterne[0]:
+            x = move[0]
+            y = move[1]
+            while True:
+                if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
+                    break
+                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                    new_patterne.append((x, y))
+                else:
+                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
+                        new_patterne.append((x, y))
+                        break
+                    else:
+                        break
+                if x > 0:
+                    x += 1
+                if x < 0:
+                    x -= 1
+                if y > 0:
+                    y += 1
+                if y < 0:
+                    y -= 1
+                if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
+                    break
+        for move in patterne[1]:
+            x = move[0]
+            y = move[1]
+            if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
+                break
+            # make rook move in direction until it goes on a square that isn't None
+            while True:
+                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                    new_patterne.append((x, y))
+                else:
+                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                        new_patterne.append((x, y))
+                        break
+                    elif peut_capturer_allie:
+                        new_patterne.append((x, y))
+                        break
+                    else:
+                        break
+                if x > 0:
+                    x += 1
+                if x < 0:
+                    x -= 1
+                if y > 0:
+                    y += 1
+                if y < 0:
+                    y -= 1
+                if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
+                    break
+        #supprime les coups duppliqués avec list(set(new_patterne))
+        return list(set(new_patterne))
+
+    def move(self, x_added, y_added, grille: list):
+        if (x_added, y_added) in self.liste_coups_legaux(grille) or self.promoting:
+            # Code mouvement basique
+            self.moved = True
+            if self.promoting:
+                self.promoting = True
+            if grille[self.y + y_added][self.x + x_added]:
+                self.capture(grille[self.y + y_added][self.x + x_added])
+            grille[self.y][self.x] = None
+            self.x += x_added
+            self.y += y_added
+            grille[self.y][self.x] = self
+            # Code gérant la promotion en dame
+            if (self.couleur == "blanc" and self.y == 0) or (self.couleur == "noir" and self.y == 7) and not self.promoted:
+                self.promoted = True
+                self.promoting = True
+            return grille
+        else:
+            raise ValueError(
+                f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
+
+
+    def capture(self, piece_capturee: Piece):
+
+        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
+        piece_capturee.x = -1
+        piece_capturee.y = -1
+
+class Voleur(Piece):
+    def __init__(self, couleur: str, x: int = 0, y: int = 0):
+        super().__init__(couleur, "voleur", x, y, 900)
+    def copy(self):
+        new_piece = Voleur(self.couleur,  self.x, self.y)
+        new_piece.moved = self.moved
+        return new_piece
+
+    def get_patterne_possible(self, x, y):
+        patterne = [(+1, +0), (+1, +1), (+0, +1), (-1, +1), (-1, +0), (-1, -1), (+0, -1), (+1, -1)]
+        for i in range(len(patterne) - 1, -1, -1):
+            if x + patterne[i][0] < 0 or x + patterne[i][0] > 7 or y + patterne[i][1] < 0 or y + \
+                    patterne[i][1] > 7:
+                patterne.pop(i)
+        return patterne
+
+    #Pareil pour toutes les pièces :  Vérifie si chaque coup est légal en prenant en comptes les autres pièces
+    def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
+        patterne = self.get_patterne_possible(self.x, self.y)
+        move_legaux = []
+
+        for move in patterne:
+
+            # Vérifie s'il n'y a pas une pièce de même couleur là où on veut aller
+            if grille[self.y + move[1]][self.x + move[0]]:
+                if peut_capturer_allie and grille[self.y + move[1]][self.x + move[0]].couleur == self.couleur:
+                    move_legaux.append(move)
+                elif not grille[self.y + move[1]][self.x + move[0]].couleur == self.couleur:
+                    move_legaux.append(move)
+            else:
+                move_legaux.append(move)
+
+        # Retourne la liste des coups légaux
+        return move_legaux
+
+
+    #Pareil pour toutes les pièces: bouge la pièce à l'endroit donnée, si le mouvement est valide
+    def move(self, x_added, y_added, grille: list):
+        #vérifie si le coup est légal
+        if (x_added, y_added) in self.liste_coups_legaux(grille):
+            self.moved = True
+            #cas spéciaux pour les rocs
+            # Si une pièce est trouvée sur la nouvelle case, la capturée car grâce à liste_coups_legaux, une pièce trouvée ne peut que être de couleur opposée
+            if grille[self.y + y_added][self.x + x_added]:
+                enemi_piece: Roi = grille[self.y + y_added][self.x + x_added]
+                enemi_piece.couleur = self.couleur
+                grille[self.y + y_added][self.x + x_added] = enemi_piece
+            else:
+                grille[self.y][self.x] = None
+                self.x += x_added
+                self.y += y_added
+                grille[self.y][self.x] = self
+            return grille
+        else:
+            raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
+
+    def capture(self, piece_capturee: Piece):
+
+        # met la pièce capturée en (-1, -1) pour dire qu'elle n'est plus dans le plateau
         piece_capturee.x = -1
         piece_capturee.y = -1
 

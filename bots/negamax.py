@@ -3,38 +3,28 @@ import chess_utils
 from engine.pieces.piece import Roi
 import copy
 
-#Les pièces sont plus ou moins fortes selon leur position, cela aide le bot à comprendre où il faudrait mieux placer les pièces.
-piece_values = {
-    "pion": 200,
-    "cavalier": 620,
-    "fou": 630,
-    "tour": 1000,
-    "dame": 1800,
-    "roi": 99999999999
-}
-
 multiplier = 1
 
 white_knight_table = [
     [-50, -40, -30, -30, -30, -30, -40, -50],
     [-40, -20, 0, 0, 0, 0, -20, -40],
-    [-30, 0, 10, 15, 15, 10, 0, -30],
-    [-30, 5, 15, 20, 20, 15, 5, -30],
+    [-30, 5, 10, 15, 15, 10, 5, -30],
+    [-30, 0, 15, 20, 20, 15, 0, -30],
     [-30, 0, 15, 20, 20, 15, 0, -30],
     [-30, 5, 10, 15, 15, 10, 5, -30],
-    [-40, -20, 0, 5, 5, 0, -20, -40],
+    [-40, -20, 0, 0, 0, 0, -20, -40],
     [-50, -40, -30, -30, -30, -30, -40, -50]
 ]
 
 white_bishop_table = [
-    [-20, -10, -10, -10, -10, -10, -10, -20],
+    [10, -10, -10, -10, -10, -10, -10, 10],
     [-10, 0, 0, 0, 0, 0, 0, -10],
     [-10, 0, 5, 10, 10, 5, 0, -10],
     [-10, 5, 5, 10, 10, 5, 5, -10],
     [-10, 0, 10, 10, 10, 10, 0, -10],
     [-10, 10, 10, 10, 10, 10, 10, -10],
     [-10, 5, 0, 0, 0, 0, 5, -10],
-    [-20, -10, -10, -10, -10, -10, -10, -20]
+    [10, -10, -10, -10, -10, -10, -10, 10]
 ]
 
 white_rook_table = [
@@ -53,9 +43,9 @@ white_queen_table = [
     [-10, 0, 0, 0, 0, 0, 0, -10],
     [-10, 0, 5, 5, 5, 5, 0, -10],
     [-5, 0, 5, 5, 5, 5, 0, -5],
-    [0, 0, 5, 5, 5, 5, 0, -5],
-    [-10, 5, 5, 5, 5, 5, 0, -10],
-    [-10, 0, 5, 0, 0, 0, 0, -10],
+    [-5, 0, 5, 5, 5, 5, 0, -5],
+    [-10, 0, 5, 5, 5, 5, 0, -10],
+    [-10, 0, 0, 0, 0, 0, 0, -10],
     [-20, -10, -10, -5, -5, -10, -10, -20]
 ]
 
@@ -102,10 +92,10 @@ piece_tables = {
         "pion": white_pawn_table
     },
     "noir": {
-        "cavalier": black_knight_table,
+        "cavalier": white_knight_table,
         "fou": black_bishop_table,
         "tour": black_rook_table,
-        "dame": black_queen_table,
+        "dame": white_queen_table,
         "roi": black_king_table,
         "pion": black_pawn_table
     }
@@ -124,142 +114,148 @@ def evaluate_board(grid, couleur: int):
 
     #Calcule l'équilibre des points
     points_blanc, points_noir = chess_utils.points_avec_roi(grid)
-    score_blanc+=points_blanc
-    score_noir+=points_noir
+    score_blanc+=points_blanc*5
+    score_noir+=points_noir*5
 
 
-    # Fonction qui calcule la sureté du roi selon divers facteurs
-    for l in range(-1,2, 2):
-        #récupère le roi
-        pieces = []
-        for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(l)):
-            if isinstance(piece, Roi):
-                pieces.append(piece)
-        if len(pieces) <1:
-            continue
-        roi: Roi = pieces[0]
-
-        #Compte combien de pion il y a devant les 3 colonnes du roi car il est important que le roi ait des pions pour se protéger
-        pions = 0
-        pion_par_colonne = {-1: 0, 0: 0, 1: 0}
-        if roi.couleur == "blanc":
-
-            for i in range(-1, 2):
-                if roi.y - 1 < 0:
-                    break
-                if roi.x + i < 0 or roi.x + i > 7:
-                    break
-                if grid[roi.y - 1][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-                if roi.y - 2 < 0:
-                    continue
-                if grid[roi.y - 2][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-        else:
-            # count how many pion there is in the 3 squares in front of the king
-            for i in range(-1, 2):
-                if roi.y + 1 > 7:
-                    break
-                if roi.x + i < 0 or roi.x + i > 7:
-                    break
-                if grid[roi.y + 1][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-                if roi.y + 2 > 7:
-                    continue
-                if grid[roi.y + 2][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-
-        king_safety = 0
-
-        #Donne les points correspondants
-        valeur_pion_par_colonne = 0
-        for k, v in pion_par_colonne.items():
-            if v == 0:
-                #Ne pas avoir de pion est mauvais car ça veut dire que le roi est ouvert
-                valeur_pion_par_colonne -= 5
-            elif v == 1:
-                valeur_pion_par_colonne += 10
-            elif v == 2:
-                valeur_pion_par_colonne += 15
-            else:
-                valeur_pion_par_colonne += 5 * v + 5
-
-        king_safety += valeur_pion_par_colonne
-
-        king_safety += 5 * pions
-
-        #Enlève des points si des pièces enemies sont trops proches du roi
-        king_safety -= 15 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 2) if
-                                 elem.couleur != roi.couleur])
-        king_safety -= 5 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if
-                                 elem.couleur != roi.couleur])
-        if chess_utils.get_couleur_str(l) == "blanc":
-            score_blanc+=king_safety
-        else:
-            score_noir+=king_safety
-
-    # Calcule le score pour une structure de pions correctes
-    for i in range(-1, 2, 2):
-        isolated_pions_score = 0
-        doubled_pions_score = 0
-        tripled_pions_score = 0
-        pion_chain_score = 0
-
-        # Récup_ère le nombre de pions dans chaque colonne
-        pion_structure = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-        pions = [piece for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(i)) if isinstance(piece, Roi)]
-        for pion in pions:
-            pion_structure[pion.x] += 1
-
-        # Calcule les pions isolés (sans pions dans les 2 colonnes adjascentes)
-        for column in range(8):
-            if pion_structure[column] > 0:
-                if column == 0:
-                    if pion_structure[column + 1] == 0:
-                        isolated_pions_score -= 20
-                elif column == 7:
-                    if pion_structure[column - 1] == 0:
-                        isolated_pions_score -= 20
-                else:
-                    if pion_structure[column - 1] == 0 and pion_structure[column + 1] == 0:
-                        isolated_pions_score -= 20
-
-        # Calcule les pions doubles ou triples (sur la même colonne)
-        for column in range(8):
-            if pion_structure[column] > 1:
-                doubled_pions_score -= 10 * (pion_structure[column] - 1)
-            if pion_structure[column] > 2:
-                tripled_pions_score -= 20 * (pion_structure[column] - 2)
-
-        # Calcule les pions chainés (un pion entouré de 2 autres pions sur les colonnes adjacentes)
-        for column in range(8):
-            if pion_structure[column] > 0:
-                if column == 0:
-                    if pion_structure[column + 1] > 0:
-                        pion_chain_score += 10
-                elif column == 7:
-                    if pion_structure[column - 1] > 0:
-                        pion_chain_score += 10
-                else:
-                    if pion_structure[column - 1] > 0 and pion_structure[column + 1] > 0:
-                        pion_chain_score += 10
-
-        pion_structure_score = isolated_pions_score + doubled_pions_score + tripled_pions_score + pion_chain_score
-        if i == 1:
-            score_blanc += pion_structure_score
-        else:
-            score_noir += pion_structure_score
+    # # Fonction qui calcule la sureté du roi selon divers facteurs
+    # for l in range(-1,2, 2):
+    #     #récupère le roi
+    #     pieces = []
+    #     for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(l)):
+    #         if isinstance(piece, Roi):
+    #             pieces.append(piece)
+    #     if len(pieces) <1:
+    #         continue
+    #     roi: Roi = pieces[0]
+    #
+    #     #Compte combien de pion il y a devant les 3 colonnes du roi car il est important que le roi ait des pions pour se protéger
+    #     pions = 0
+    #     pion_par_colonne = {-1: 0, 0: 0, 1: 0}
+    #     if roi.couleur == "blanc":
+    #
+    #         for i in range(-1, 2):
+    #             if roi.y - 1 < 0:
+    #                 break
+    #             if roi.x + i < 0 or roi.x + i > 7:
+    #                 break
+    #             if grid[roi.y - 1][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #             if roi.y - 2 < 0:
+    #                 continue
+    #             if grid[roi.y - 2][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #     else:
+    #         # count how many pion there is in the 3 squares in front of the king
+    #         for i in range(-1, 2):
+    #             if roi.y + 1 > 7:
+    #                 break
+    #             if roi.x + i < 0 or roi.x + i > 7:
+    #                 break
+    #             if grid[roi.y + 1][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #             if roi.y + 2 > 7:
+    #                 continue
+    #             if grid[roi.y + 2][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #
+    #     king_safety = 0
+    #
+    #     #Donne les points correspondants
+    #     valeur_pion_par_colonne = 0
+    #     for k, v in pion_par_colonne.items():
+    #         if v == 0:
+    #             #Ne pas avoir de pion est mauvais car ça veut dire que le roi est ouvert
+    #             valeur_pion_par_colonne -= 5
+    #         elif v == 1:
+    #             valeur_pion_par_colonne += 10
+    #         elif v == 2:
+    #             valeur_pion_par_colonne += 15
+    #         else:
+    #             valeur_pion_par_colonne += 5 * v + 5
+    #
+    #     king_safety += valeur_pion_par_colonne
+    #
+    #     king_safety += 5 * pions
+    #
+    #     #Enlève des points si des pièces enemies sont trops proches du roi
+    #     king_safety -= 15 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 2) if
+    #                              elem.couleur != roi.couleur])
+    #     king_safety -= 5 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if
+    #                              elem.couleur != roi.couleur])
+    #     if chess_utils.get_couleur_str(l) == "blanc":
+    #         score_blanc+=king_safety
+    #     else:
+    #         score_noir+=king_safety
+    #
+    # # Calcule le score pour une structure de pions correctes
+    # for i in range(-1, 2, 2):
+    #     isolated_pions_score = 0
+    #     doubled_pions_score = 0
+    #     tripled_pions_score = 0
+    #     pion_chain_score = 0
+    #
+    #     # Récup_ère le nombre de pions dans chaque colonne
+    #     pion_structure = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+    #     pions = [piece for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(i)) if isinstance(piece, Roi)]
+    #     for pion in pions:
+    #         pion_structure[pion.x] += 1
+    #
+    #     # Calcule les pions isolés (sans pions dans les 2 colonnes adjascentes)
+    #     for column in range(8):
+    #         if pion_structure[column] > 0:
+    #             if column == 0:
+    #                 if pion_structure[column + 1] == 0:
+    #                     isolated_pions_score -= 20
+    #             elif column == 7:
+    #                 if pion_structure[column - 1] == 0:
+    #                     isolated_pions_score -= 20
+    #             else:
+    #                 if pion_structure[column - 1] == 0 and pion_structure[column + 1] == 0:
+    #                     isolated_pions_score -= 20
+    #
+    #     # Calcule les pions doubles ou triples (sur la même colonne)
+    #     for column in range(8):
+    #         if pion_structure[column] > 1:
+    #             doubled_pions_score -= 10 * (pion_structure[column] - 1)
+    #         if pion_structure[column] > 2:
+    #             tripled_pions_score -= 20 * (pion_structure[column] - 2)
+    #
+    #     # Calcule les pions chainés (un pion entouré de 2 autres pions sur les colonnes adjacentes)
+    #     for column in range(8):
+    #         if pion_structure[column] > 0:
+    #             if column == 0:
+    #                 if pion_structure[column + 1] > 0:
+    #                     pion_chain_score += 10
+    #             elif column == 7:
+    #                 if pion_structure[column - 1] > 0:
+    #                     pion_chain_score += 10
+    #             else:
+    #                 if pion_structure[column - 1] > 0 and pion_structure[column + 1] > 0:
+    #                     pion_chain_score += 10
+    #
+    #     pion_structure_score = isolated_pions_score + doubled_pions_score + tripled_pions_score + pion_chain_score
+    #     if i == 1:
+    #         score_blanc += pion_structure_score
+    #     else:
+    #         score_noir += pion_structure_score
 
     # Donne les points selon la position de chaque pièce selon le tableau
     for piece in chess_utils.liste_pieces_restantes(grid):
         if piece.couleur == "blanc":
-            score_blanc+=(piece_tables["blanc"][piece.type_de_piece][piece.y][piece.x])
+            try:
+                score_blanc+=(piece_tables["blanc"][piece.type_de_piece][piece.y][piece.x])
+            except KeyError:
+                continue
         else:
-            score_noir += (piece_tables["noir"][piece.type_de_piece][piece.y][piece.x])
+            try:
+                score_noir += (piece_tables["noir"][piece.type_de_piece][piece.y][piece.x])
+            except KeyError:
+                continue
     #Retourne le score finale multiplier par la valeur de la couleur car un score négatif est bon pour noir
     evaluation = (score_blanc - score_noir) * couleur
 
@@ -308,7 +304,7 @@ def zobrist_hash(board):
                 piece_color = piece.couleur
 
                 # Map piece types and colors to corresponding integer values
-                piece_type_mapping = {"roi": 0, "dame": 1, "tour": 2, "fou": 3, "cavalier": 4, "pion": 5}
+                piece_type_mapping = {"roi": 0, "dame": 1, "tour": 2, "fou": 3, "cavalier": 4, "pion": 5, "goku":6, "vegeta":7, "voleur":8}
                 piece_color_mapping = {"blanc": 0, "noir": 1}
 
                 piece_type_value = piece_type_mapping[piece_type]

@@ -1,4 +1,4 @@
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur
 
 import time
 import requests
@@ -42,6 +42,7 @@ import chess.polyglot
 
 #Récupère si possible un coup en provenance d'un énorme variété d'ouverture selon le plateau
 def get_best_move_from_opening_book(grille, couleur):
+    return None
     board = chess.Board(fen = board_to_fen(grille, couleur, status="ouverture"))
     with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
         try:
@@ -82,7 +83,7 @@ def board_to_fen(board, couleur, status="endgame"):
 
 def symbol_from_piece(piece):
     piece_symbol_dict = {
-        Roi: 'K', Dame: 'Q', Tour: 'R', Fou: 'B', Cavalier: 'N', Pion: 'P'
+        Roi: 'K', Dame: 'Q', Tour: 'R', Fou: 'B', Cavalier: 'N', Pion: 'P', Goku: 'G', Vegeta: 'V', Voleur: 'T'
     }
     if piece.couleur == "noir":
         return piece_symbol_dict[type(piece)].lower()

@@ -93,6 +93,7 @@ def get_bot_move(grid, tour, depth):
 
   print(best_combo)
   best_piece: Roi
+  print()
   chess_utils.montrer_grille(grid)
   grid = best_piece.move(best_move[0], best_move[1], grid)
 
@@ -197,7 +198,7 @@ def start_manuel(partie):
             converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
 
             partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
-
+            print()
             chess_utils.montrer_grille(partie.grille)
             #Reset les variables pour attendre la prochaine pièce à sélectionner
             selected_piece = None

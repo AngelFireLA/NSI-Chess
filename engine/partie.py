@@ -1,5 +1,5 @@
 import chess_utils
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur
 import bots.negamax as negamax
 import time
 import endgame_and_opening_move_finder
@@ -48,9 +48,9 @@ class Partie():
     def piece_from_symbol(self, symbol: str):
         symbol_piece_dict = {
             'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
-            'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"),
+            'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"), 'G': (Goku, "blanc"), 'V': (Vegeta, 'blanc'), 'T': (Voleur, 'blanc'),
             'k': (Roi, "noir"), 'q': (Dame, "noir"), 'r': (Tour, "noir"), 'b': (Fou, "noir"),
-            'n': (Cavalier, "noir"), 'p': (Pion, "noir")
+            'n': (Cavalier, "noir"), 'p': (Pion, "noir"), 'g': (Goku, "noir"), 'v': (Vegeta, 'noir'), 't': (Voleur, 'noir')
         }
         return symbol_piece_dict[symbol]
 
@@ -273,7 +273,7 @@ class Partie():
 
 #Partie exemple
 p = Partie()
-p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+p.setup_from_fen("rgbvktnr/pppppppp/8/8/8/8/PPPPPPPP/RGBVKTNR")
 # import cProfile
 # import pstats
 #
@@ -302,11 +302,11 @@ p.mode = "semi-auto"
 
 
 #Soit on peut lancer le jeux avec l'interface graphique, en manuel
-#chess_interface.start_manuel(p)
+chess_interface.start_manuel(p)
 
 #Soit on peut le lancer, en semi-auto donc contre le bot
-DEPTH = 4 #Nombre de coup à voir dans le futur,
-chess_interface.start_semiauto(p, DEPTH, "blanc")
+DEPTH = 5 #Nombre de coup à voir dans le futur,
+#chess_interface.start_semiauto(p, DEPTH, "blanc")
 
 
 
