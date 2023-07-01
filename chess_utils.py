@@ -99,14 +99,18 @@ def check_si_roi_restant(grille):
 
 #Montre la grille visuellement plus jolie mais toujours textuelle
 def montrer_grille(grille):
+    grid = [[],[],[],[],[],[],[],[]]
     for i in grille:
         ligne = []
         for j in i:
             if j:
                 ligne.append(f"{j.couleur[0]}_{j.type_de_piece}")
+                grid[grille.index(i)].append(f"{j.couleur[0]}_{j.type_de_piece}")
             else:
                 ligne.append(None)
+                grid[grille.index(i)].append(None)
         print(ligne)
+    return grid
 
 #Vérifie s'il ne reste que des rois sur le plateau, donc si c'est égalité
 def roi_contre_roi(grille) -> bool:

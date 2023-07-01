@@ -128,130 +128,130 @@ def evaluate_board(grid, couleur: int):
 
 
     # Fonction qui calcule la sureté du roi selon divers facteurs
-    for l in range(-1,2, 2):
-        #récupère le roi
-        pieces = []
-        for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(l)):
-            if isinstance(piece, Roi):
-                pieces.append(piece)
-        if len(pieces) <1:
-            continue
-        roi: Roi = pieces[0]
-
-        #Compte combien de pion il y a devant les 3 colonnes du roi car il est important que le roi ait des pions pour se protéger
-        pions = 0
-        pion_par_colonne = {-1: 0, 0: 0, 1: 0}
-        if roi.couleur == "blanc":
-
-            for i in range(-1, 2):
-                if roi.y - 1 < 0:
-                    break
-                if roi.x + i < 0 or roi.x + i > 7:
-                    break
-                if grid[roi.y - 1][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-                if roi.y - 2 < 0:
-                    continue
-                if grid[roi.y - 2][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-        else:
-            # count how many pion there is in the 3 squares in front of the king
-            for i in range(-1, 2):
-                if roi.y + 1 > 7:
-                    break
-                if roi.x + i < 0 or roi.x + i > 7:
-                    break
-                if grid[roi.y + 1][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-                if roi.y + 2 > 7:
-                    continue
-                if grid[roi.y + 2][roi.x + i]:
-                    pions += 1
-                    pion_par_colonne[i] += 1
-
-        king_safety = 0
-
-        #Donne les points correspondants
-        valeur_pion_par_colonne = 0
-        for k, v in pion_par_colonne.items():
-            if v == 0:
-                #Ne pas avoir de pion est mauvais car ça veut dire que le roi est ouvert
-                valeur_pion_par_colonne -= 5
-            elif v == 1:
-                valeur_pion_par_colonne += 10
-            elif v == 2:
-                valeur_pion_par_colonne += 15
-            else:
-                valeur_pion_par_colonne += 5 * v + 5
-
-        king_safety += valeur_pion_par_colonne
-
-        king_safety += 5 * pions
-
-        #Enlève des points si des pièces enemies sont trops proches du roi
-        king_safety -= 15 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 2) if
-                                 elem.couleur != roi.couleur])
-        king_safety -= 5 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if
-                                 elem.couleur != roi.couleur])
-        if chess_utils.get_couleur_str(l) == "blanc":
-            score_blanc+=king_safety
-        else:
-            score_noir+=king_safety
+    # for l in range(-1,2, 2):
+    #     #récupère le roi
+    #     pieces = []
+    #     for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(l)):
+    #         if isinstance(piece, Roi):
+    #             pieces.append(piece)
+    #     if len(pieces) <1:
+    #         continue
+    #     roi: Roi = pieces[0]
+    #
+    #     #Compte combien de pion il y a devant les 3 colonnes du roi car il est important que le roi ait des pions pour se protéger
+    #     pions = 0
+    #     pion_par_colonne = {-1: 0, 0: 0, 1: 0}
+    #     if roi.couleur == "blanc":
+    #
+    #         for i in range(-1, 2):
+    #             if roi.y - 1 < 0:
+    #                 break
+    #             if roi.x + i < 0 or roi.x + i > 7:
+    #                 break
+    #             if grid[roi.y - 1][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #             if roi.y - 2 < 0:
+    #                 continue
+    #             if grid[roi.y - 2][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #     else:
+    #         # count how many pion there is in the 3 squares in front of the king
+    #         for i in range(-1, 2):
+    #             if roi.y + 1 > 7:
+    #                 break
+    #             if roi.x + i < 0 or roi.x + i > 7:
+    #                 break
+    #             if grid[roi.y + 1][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #             if roi.y + 2 > 7:
+    #                 continue
+    #             if grid[roi.y + 2][roi.x + i]:
+    #                 pions += 1
+    #                 pion_par_colonne[i] += 1
+    #
+    #     king_safety = 0
+    #
+    #     #Donne les points correspondants
+    #     valeur_pion_par_colonne = 0
+    #     for k, v in pion_par_colonne.items():
+    #         if v == 0:
+    #             #Ne pas avoir de pion est mauvais car ça veut dire que le roi est ouvert
+    #             valeur_pion_par_colonne -= 5
+    #         elif v == 1:
+    #             valeur_pion_par_colonne += 10
+    #         elif v == 2:
+    #             valeur_pion_par_colonne += 15
+    #         else:
+    #             valeur_pion_par_colonne += 5 * v + 5
+    #
+    #     king_safety += valeur_pion_par_colonne
+    #
+    #     king_safety += 5 * pions
+    #
+    #     #Enlève des points si des pièces enemies sont trops proches du roi
+    #     king_safety -= 15 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 2) if
+    #                              elem.couleur != roi.couleur])
+    #     king_safety -= 5 * len([elem for elem in chess_utils.liste_pieces_dans_rayon(grid, roi.x, roi.y, 3) if
+    #                              elem.couleur != roi.couleur])
+    #     if chess_utils.get_couleur_str(l) == "blanc":
+    #         score_blanc+=king_safety
+    #     else:
+    #         score_noir+=king_safety
 
     # Calcule le score pour une structure de pions correctes
-    for i in range(-1, 2, 2):
-        isolated_pions_score = 0
-        doubled_pions_score = 0
-        tripled_pions_score = 0
-        pion_chain_score = 0
-
-        # Récup_ère le nombre de pions dans chaque colonne
-        pion_structure = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
-        pions = [piece for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(i)) if isinstance(piece, Roi)]
-        for pion in pions:
-            pion_structure[pion.x] += 1
-
-        # Calcule les pions isolés (sans pions dans les 2 colonnes adjascentes)
-        for column in range(8):
-            if pion_structure[column] > 0:
-                if column == 0:
-                    if pion_structure[column + 1] == 0:
-                        isolated_pions_score -= 20
-                elif column == 7:
-                    if pion_structure[column - 1] == 0:
-                        isolated_pions_score -= 20
-                else:
-                    if pion_structure[column - 1] == 0 and pion_structure[column + 1] == 0:
-                        isolated_pions_score -= 20
-
-        # Calcule les pions doubles ou triples (sur la même colonne)
-        for column in range(8):
-            if pion_structure[column] > 1:
-                doubled_pions_score -= 10 * (pion_structure[column] - 1)
-            if pion_structure[column] > 2:
-                tripled_pions_score -= 20 * (pion_structure[column] - 2)
-
-        # Calcule les pions chainés (un pion entouré de 2 autres pions sur les colonnes adjacentes)
-        for column in range(8):
-            if pion_structure[column] > 0:
-                if column == 0:
-                    if pion_structure[column + 1] > 0:
-                        pion_chain_score += 10
-                elif column == 7:
-                    if pion_structure[column - 1] > 0:
-                        pion_chain_score += 10
-                else:
-                    if pion_structure[column - 1] > 0 and pion_structure[column + 1] > 0:
-                        pion_chain_score += 10
-
-        pion_structure_score = isolated_pions_score + doubled_pions_score + tripled_pions_score + pion_chain_score
-        if i == 1:
-            score_blanc += pion_structure_score
-        else:
-            score_noir += pion_structure_score
+    # for i in range(-1, 2, 2):
+    #     isolated_pions_score = 0
+    #     doubled_pions_score = 0
+    #     tripled_pions_score = 0
+    #     pion_chain_score = 0
+    #
+    #     # Récup_ère le nombre de pions dans chaque colonne
+    #     pion_structure = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+    #     pions = [piece for piece in chess_utils.liste_pieces_bougeables(grid, chess_utils.get_couleur_str(i)) if isinstance(piece, Roi)]
+    #     for pion in pions:
+    #         pion_structure[pion.x] += 1
+    #
+    #     # Calcule les pions isolés (sans pions dans les 2 colonnes adjascentes)
+    #     for column in range(8):
+    #         if pion_structure[column] > 0:
+    #             if column == 0:
+    #                 if pion_structure[column + 1] == 0:
+    #                     isolated_pions_score -= 20
+    #             elif column == 7:
+    #                 if pion_structure[column - 1] == 0:
+    #                     isolated_pions_score -= 20
+    #             else:
+    #                 if pion_structure[column - 1] == 0 and pion_structure[column + 1] == 0:
+    #                     isolated_pions_score -= 20
+    #
+    #     # Calcule les pions doubles ou triples (sur la même colonne)
+    #     for column in range(8):
+    #         if pion_structure[column] > 1:
+    #             doubled_pions_score -= 10 * (pion_structure[column] - 1)
+    #         if pion_structure[column] > 2:
+    #             tripled_pions_score -= 20 * (pion_structure[column] - 2)
+    #
+    #     # Calcule les pions chainés (un pion entouré de 2 autres pions sur les colonnes adjacentes)
+    #     for column in range(8):
+    #         if pion_structure[column] > 0:
+    #             if column == 0:
+    #                 if pion_structure[column + 1] > 0:
+    #                     pion_chain_score += 10
+    #             elif column == 7:
+    #                 if pion_structure[column - 1] > 0:
+    #                     pion_chain_score += 10
+    #             else:
+    #                 if pion_structure[column - 1] > 0 and pion_structure[column + 1] > 0:
+    #                     pion_chain_score += 10
+    #
+    #     pion_structure_score = isolated_pions_score + doubled_pions_score + tripled_pions_score + pion_chain_score
+    #     if i == 1:
+    #         score_blanc += pion_structure_score
+    #     else:
+    #         score_noir += pion_structure_score
 
     # Donne les points selon la position de chaque pièce selon le tableau
     for piece in chess_utils.liste_pieces_restantes(grid):
@@ -360,16 +360,10 @@ def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=
 
     # Ajoute le mouvement de variation principale au début de la liste des mouvements s'il existe.
     if pv_move is not None:
-        if iterative_deepning:
-            ordered_moves = king_captures + best_moves_from_inferior_depth + [pv_move]  + killer_moves + other_captures + quiet_moves
-        else:
-            ordered_moves = king_captures + [pv_move]  + killer_moves + other_captures  + quiet_moves
+        ordered_moves = king_captures  + [pv_move]  + killer_moves + other_captures + quiet_moves
 
     else:
-        if iterative_deepning:
-            ordered_moves = king_captures + best_moves_from_inferior_depth + killer_moves + other_captures  + quiet_moves
-        else:
-            ordered_moves = king_captures + killer_moves + other_captures + quiet_moves
+        ordered_moves = king_captures + killer_moves + other_captures + quiet_moves
     return ordered_moves
 
 
@@ -465,18 +459,11 @@ time_limit = None
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
 def iterative_deepening_negamax(board, couleur, final_depth):
-    global best_moves_from_inferior_depth, transposition_table, zobrist, start_time, time_limit
-    board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
-    best_score = None
-    best_moves = []
-    start_time = time.time()
+    global transposition_table, zobrist, start_time, time_limit
     time_limit = 12.0
-    for depth in range(2, final_depth + 1, 2):
-        transposition_table = {}
-        zobrist = []
-        init_transposition()
-        best_score, best_move = negascout(board, depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=depth)
-        best_moves.append(best_move)
-        best_moves_from_inferior_depth.append(best_move)
-    return best_score, best_moves[-1]
+    transposition_table = {}
+    zobrist = []
+    init_transposition()
+    best_score, best_move = negascout(board, final_depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=final_depth)
+    return best_score, best_move
 
