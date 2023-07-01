@@ -144,18 +144,12 @@ def points_avec_roi(grille):
 #Récupère toutes les captures ou promotions possibles pour un camp dans une position donnée
 def possible_captures_ou_promotions(couleur: str, grille):
     all_legal_moves = liste_coups_legaux(couleur, grille)
-    current_points = points_avec_roi(grille)
-    return [
-        (piece, move) for piece, move in all_legal_moves
-        if not points_avec_roi(
-            [[piece.copy() if piece is not None else None for piece in row] for row in grille]
-        ) == current_points
-    ]
-
-
-
+    captures = []
+    for (piece, move) in all_legal_moves:
+        j = grille[piece.y + move[1]][piece.x + move[0]]
+        if j and j.couleur != piece.couleur:
+            captures.append((piece, move))
     return captures
-
 
 
 #Récupérer toutes les pièces qui sont menacée d'un camp spécifique

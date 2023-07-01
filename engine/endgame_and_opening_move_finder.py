@@ -161,5 +161,25 @@ def convert_move(chess_move):
 
     return source_coords, dest_coords
 
+def convert_custom_move(piece_class_move):
+    piece_class, coords_change = piece_class_move
+    x_change, y_change = coords_change
+
+    original_pos = (piece_class.x,  piece_class.y)  # assuming you store the current position in 'position'
+
+    # Create original and destination squares in tuple (x_change, y_change)
+    orig_square_tuple = (original_pos[0], original_pos[1])
+    dest_square_tuple = (x_change, y_change)
+
+    print(orig_square_tuple, coords_change)
+
+    # Consider that the chess board coordinates start from the bottom left as (0,0) while python 2D array starts from top left.
+    orig_square_chess_notation = chr(ord('a') + orig_square_tuple[0]) + str(8 - orig_square_tuple[1])
+    dest_square_chess_notation = chr(ord('a') + dest_square_tuple[0]) + str(8 - dest_square_tuple[1])
+
+    chess_move = (orig_square_chess_notation, dest_square_chess_notation)
+    return chess_move
+
+
 
 

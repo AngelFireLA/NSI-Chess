@@ -47,9 +47,10 @@ def check_click(surfaces, event):
   return None  # Return None if no surface is clicked
 
 plateau = []
-
+tour_num = 0
 #récupère le coup du bot, similaire à la fonction run() de Partie
-def get_bot_move(grid, tour, depth):
+def get_bot_move(grid, tour, depth, partie):
+  global tour_num
   alpha = -float('inf')
   beta = float('inf')
 
@@ -99,6 +100,12 @@ def get_bot_move(grid, tour, depth):
   surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
   coords = grille[best_piece.y][best_piece.x]
   piece_rect = pygame.Rect(coords[0], coords[0], surface.get_width(), surface.get_height())
+  from engine.endgame_and_opening_move_finder import convert_custom_move
+  if best_piece.type_de_piece == "pion":
+    partie.pgn+=f" {convert_custom_move((best_piece, best_move))[1]}"
+  else:
+    partie.pgn += f" {endgame_and_opening_move_finder.symbol_from_piece(best_piece)}{convert_custom_move((best_piece, best_move))[1]}"
+  tour_num+=1
   return (surface, piece_rect), grid
 
 #Affiche un texte selon des paramètres
@@ -242,6 +249,7 @@ def start_semiauto(partie, start_tour:str):
   from engine.partie import Partie
   partie: Partie
   global plateau
+  global tour_num
   plateau = partie.grille
   pygame.init()
   selected_piece = None
@@ -257,6 +265,7 @@ def start_semiauto(partie, start_tour:str):
   bot_answer = None
   selected_bot = None
   partie_finie = False
+  tour_num = 0
 
   while not partie.terminee:
     selected_squares.clear()
@@ -301,7 +310,11 @@ def start_semiauto(partie, start_tour:str):
             # Send the message here
             print("Selected square:", coords_from_pixel(square_rect.center[0], square_rect.center[1]))
             converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
-
+            from engine.endgame_and_opening_move_finder import convert_custom_move
+            if selected_piece.type_de_piece == "pion":
+              partie.pgn+=f" {tour_num}. {convert_custom_move((selected_piece, converted_coords))[1]}"
+            else:
+              partie.pgn+=f" {tour_num}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
             partie.grille = selected_piece.move(converted_coords[0] - selected_piece.x,
                                                 converted_coords[1] - selected_piece.y, partie.grille)
 
@@ -325,7 +338,7 @@ def start_semiauto(partie, start_tour:str):
         fenetre.blit(bot_reflechit[0], bot_reflechit[1])
         pygame.display.flip()
 
-        bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH)
+        bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH, partie)
         #Si le bot retourne None c'est que la partie est finie
         if not bot_answer:
           print(chess_utils.check_si_roi_restant(partie.grille))
@@ -359,9 +372,11 @@ def start_semiauto(partie, start_tour:str):
       fenetre.blit(bot_reflechit[0], bot_reflechit[1])
       pygame.display.flip()
       partie.terminee = True
+      print(partie.pgn)
       time.sleep(10)
     if chess_utils.check_si_roi_restant(partie.grille):
       partie_finie = True
+      print(partie.pgn)
 
     if chess_utils.roi_contre_roi(partie.grille) and partie_finie.terminee:
       print("Egalité ! Il ne reste que des rois sur le plateau.")
@@ -370,9 +385,11 @@ def start_semiauto(partie, start_tour:str):
       fenetre.blit(bot_reflechit[0], bot_reflechit[1])
       pygame.display.flip()
       partie.terminee = True
+      print(partie.pgn)
       time.sleep(10)
     if chess_utils.roi_contre_roi(partie.grille):
       partie_finie = True
+      print(partie.pgn)
 
 
     pygame.display.flip()

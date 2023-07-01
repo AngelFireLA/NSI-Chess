@@ -471,7 +471,7 @@ time_limit = None
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
 def iterative_deepening_negamax(board, couleur, final_depth):
     global transposition_table, zobrist, start_time, time_limit
-    time_limit = 30.0
+    time_limit = 12000.0
     start_time = time.time()
     transposition_table = {}
     zobrist = []

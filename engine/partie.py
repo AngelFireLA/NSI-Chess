@@ -21,6 +21,14 @@ class Partie:
         self.mode = mode
         self.depth = 6
         self.second_depth = 6
+        self.pgn = """[Event "Game"]
+[Site "Somewhere"]
+[Date "Sometime"]
+[Round "1"]
+[White "White"]
+[Black "Black"]
+[Result "*"]\n
+        """
 
     #Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
     # on peut le générer pour n'importe quel position
@@ -298,7 +306,7 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 p.mode = "auto"
 
 #On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
-p.depth = 4
+p.depth = 6
 #p.run()
 
 
