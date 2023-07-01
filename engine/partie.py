@@ -19,8 +19,8 @@ class Partie:
         self.type_de_partie = type_de_partie
         self.grille = None
         self.mode = mode
-        self.depth = 4
-        self.second_depth = 4
+        self.depth = 6
+        self.second_depth = 6
 
     #Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
     # on peut le générer pour n'importe quel position

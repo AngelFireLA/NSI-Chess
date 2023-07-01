@@ -328,6 +328,7 @@ def start_semiauto(partie, start_tour:str):
         bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH)
         #Si le bot retourne None c'est que la partie est finie
         if not bot_answer:
+          print(chess_utils.check_si_roi_restant(partie.grille))
           if chess_utils.check_si_roi_restant(partie.grille):
             print(
               f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(partie.grille)} par capture du roi")
@@ -340,6 +341,8 @@ def start_semiauto(partie, start_tour:str):
             partie.terminee = True
             pygame.quit()
             exit()
+
+          raise ValueError("Le bot n'a pas trouvé de coup ?")
 
         # Restaure la fenêtre pygame
         fenetre.blit(fenetre_originale, (0, 0))
