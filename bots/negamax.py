@@ -118,9 +118,6 @@ piece_tables = {
 def evaluate_board(grid, couleur: int):
     score_blanc, score_noir = 0, 0
 
-    #vérifie s'il n'y a pas pat  :
-    pieces_enemies = chess_utils.liste_pieces_bougeables(grid, -couleur)
-    nb_pieces = chess_utils.nb_pieces_restantes(grid)
 
     #Calcule l'équilibre des points
     points_blanc, points_noir = chess_utils.points_avec_roi(grid)

@@ -103,7 +103,7 @@ def montrer_grille(grille):
         ligne = []
         for j in i:
             if j:
-                ligne.append(j.type_de_piece)
+                ligne.append(f"{j.couleur[0]}_{j.type_de_piece}")
             else:
                 ligne.append(None)
         print(ligne)
@@ -128,19 +128,30 @@ def points(grille):
 
 #Fonctions qui comptent les points de chaque camp en comptant les rois
 def points_avec_roi(grille):
-    points_blanc = sum([j.valeur for i in grille for j in i if j and j.couleur == "blanc"])
-    points_noir = sum([j.valeur for i in grille for j in i if j and j.couleur == "noir"])
-    return points_blanc, points_noir
+    pointss = {'blanc': 0, 'noir': 0}
+
+    for row in grille:
+        for cell in row:
+            if cell:
+                pointss[cell.couleur] += cell.valeur
+
+    return pointss['blanc'], pointss['noir']
 
 #Récupère toutes les captures ou promotions possibles pour un camp dans une position donnée
-def possible_captures_ou_promotions(couleur:str, grille):
+def possible_captures_ou_promotions(couleur: str, grille):
     all_legal_moves = liste_coups_legaux(couleur, grille)
+    current_points = points_avec_roi(grille)
     return [
         (piece, move) for piece, move in all_legal_moves
-        if not points_avec_roi(grille) == points_avec_roi(
-            piece.copy().move(move[0], move[1],[[piece.copy() if piece is not None else None for piece in row] for row in grille])
-        )
+        if not points_avec_roi(
+            [[piece.copy() if piece is not None else None for piece in row] for row in grille]
+        ) == current_points
     ]
+
+
+
+    return captures
+
 
 
 #Récupérer toutes les pièces qui sont menacée d'un camp spécifique

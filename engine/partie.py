@@ -1,24 +1,26 @@
+import chess_interface
 import chess_utils
 from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
 import bots.negamax as negamax
 import time
 import endgame_and_opening_move_finder
-import chess_interface
-import timeit
 
 
-class Partie():
+
+class Partie:
     def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1, mode="manuel"):
         #setup pour voir si le plateau a été défini
         self.setup = False
-        self.points_blanc = 0
-        self.points_noir = 0
+        self.points_blanc = points_blanc
+        self.points_noir = points_noir
         self.terminee = False
         #tour dans "a qui le tour" et pas la pièce
         self.tour = tour
         self.type_de_partie = type_de_partie
         self.grille = None
         self.mode = mode
+        self.depth = 4
+        self.second_depth = 4
 
     #Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
     # on peut le générer pour n'importe quel position
@@ -101,7 +103,7 @@ class Partie():
                         while not coup:
                             inp_coup = input("Sélectionner nouvelle coordonnées :")
                             coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                                           self.get_grille())
+                                                           self.grille)
                             print(coup)
                         print(f"Vous avez jouer {inp_coup}")
                         # Met à jour le plateau après le mouvement
@@ -110,14 +112,13 @@ class Partie():
                     if self.mode == "auto":
                         print(i)
                         i+=1
-                        alpha = -float('inf')
-                        beta = float('inf')
-                        depth = 6
 
                         if self.tour == "blanc":
                             couleur = 1
+                            depth = self.depth
                         else:
                             couleur = -1
+                            depth = self.second_depth
                         #Vérifie si la position est dans le livre d'ouverture, et si oui jouer le coup recommandé
                         start_time = time.time()
                         opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille, self.tour)
@@ -153,7 +154,7 @@ class Partie():
 
                         print(f"Time taken: {total_time} seconds")
 
-                        print(best_combo)
+                        print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
                         best_piece: Roi
                         #Effectue le meilleur coup trouvé
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
@@ -207,9 +208,8 @@ class Partie():
                             self.grille = coup
                             chess_utils.montrer_grille(self.grille)
                         else:
-                            alpha = -float('inf')
-                            beta = float('inf')
-                            depth = 4
+
+                            depth = self.depth
                             # call negamax to find the best move
                             if self.tour == "blanc":
                                 couleur = 1
@@ -285,17 +285,20 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 #     couleur = -1
 #
 # with cProfile.Profile() as pr:
-#     best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur,
-#                                                                  4)
-# print(best_score, best_combo)
+#     best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, 4)
+#
+# best_piece, best_move = best_combo
+# print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
+#
 # stats = pstats.Stats(pr)
 # stats.sort_stats(pstats.SortKey.TIME)
 # stats.print_stats()
 
 #"auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
-p.mode = "semi-auto"
+p.mode = "auto"
 
 #On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
+p.depth = 4
 #p.run()
 
 
@@ -305,8 +308,7 @@ p.mode = "semi-auto"
 #chess_interface.start_manuel(p)
 
 #Soit on peut le lancer, en semi-auto donc contre le bot
-DEPTH = 4 #Nombre de coup à voir dans le futur,
-chess_interface.start_semiauto(p, DEPTH, "blanc")
+chess_interface.start_semiauto(p, "blanc")
 
 
 

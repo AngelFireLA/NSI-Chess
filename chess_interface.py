@@ -236,9 +236,9 @@ def start_manuel(partie):
 
 
 #Fonction qui lance le jeu en mode joueur contre bot
-def start_semiauto(partie, chosen_depth, start_tour:str):
+def start_semiauto(partie, start_tour:str):
   global DEPTH
-  DEPTH = chosen_depth
+  DEPTH = partie.depth
   from engine.partie import Partie
   partie: Partie
   global plateau

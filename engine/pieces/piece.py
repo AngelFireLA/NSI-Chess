@@ -2,7 +2,7 @@ import chess_utils
 
 
 # classe de base qui sera héritée par toute les pièces
-class Piece():
+class Piece:
     def __init__(self, couleur: str, type_de_piece: str, x: int, y: int, valeur: int):
         self.couleur = couleur
         self.x, self.y = x, y
@@ -216,7 +216,6 @@ class Pion(Piece):
             from engine import endgame_and_opening_move_finder
             print(endgame_and_opening_move_finder.board_to_fen(grille, self.couleur))
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
     def capture(self, piece_capturee: Piece):
         #Code basique de capture
@@ -344,7 +343,6 @@ class Tour(Piece):
             return grille
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
     def capture(self, piece_capturee: Piece):
 
@@ -447,7 +445,6 @@ class Dame(Piece):
             return grille
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
     def capture(self, piece_capturee: Piece):
 
@@ -514,7 +511,6 @@ class Fou(Piece):
         else:
 
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
     def capture(self, piece_capturee: Piece):
 

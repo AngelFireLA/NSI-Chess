@@ -43,13 +43,67 @@ import chess.polyglot
 #Récupère si possible un coup en provenance d'un énorme variété d'ouverture selon le plateau
 def get_best_move_from_opening_book(grille, couleur):
     board = chess.Board(fen = board_to_fen(grille, couleur, status="ouverture"))
+    import random
     with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
-        try:
-            entry = reader.find(board)
-            best_move = entry.move
-            return convert_move(best_move)
-        except IndexError:
-            return None
+        entries = list(reader.find_all(board))
+        valid_entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
+
+        if entries:
+            total_weight = sum(entry.weight for entry in entries)
+            random_weight = random.randint(1, total_weight)
+            cumulative_weight = 0
+            for entry in entries:
+                cumulative_weight += entry.weight
+                if cumulative_weight >= random_weight:
+                    best_move = entry.move
+                    break
+            else:
+                # If no move was selected (shouldn't happen unless all weights are 0),
+                # you can handle it here, such as selecting a default move.
+                with chess.polyglot.open_reader("opening_book/book.bin") as reader1:
+                    entries = list(reader1.find_all(board))
+                    if entries:
+                        total_weight = sum(entry.weight for entry in entries)
+                        random_weight = random.randint(1, total_weight)
+                        cumulative_weight = 0
+                        for entry in entries:
+                            cumulative_weight += entry.weight
+                            if cumulative_weight >= random_weight:
+                                best_move = entry.move
+                                break
+                        else:
+                            # If no move was selected (shouldn't happen unless all weights are 0),
+                            # you can handle it here, such as selecting a default move.
+                            return None
+                    else:
+                        # If no opening moves are available, you can handle it here,
+                        # such as selecting a default move.
+                        return None
+        else:
+            # If no opening moves are available, you can handle it here,
+            # such as selecting a default move.
+            with chess.polyglot.open_reader("opening_book/book.bin") as reader2:
+                entries = list(reader2.find_all(board))
+                if entries:
+                    total_weight = sum(entry.weight for entry in entries)
+                    random_weight = random.randint(1, total_weight)
+                    cumulative_weight = 0
+                    for entry in entries:
+                        cumulative_weight += entry.weight
+                        if cumulative_weight >= random_weight:
+                            best_move = entry.move
+                            break
+                    else:
+                        # If no move was selected (shouldn't happen unless all weights are 0),
+                        # you can handle it here, such as selecting a default move.
+                        return None
+                else:
+                    # If no opening moves are available, you can handle it here,
+                    # such as selecting a default move.
+                    return None
+
+    return convert_move(best_move)
+
 
 #Transforme la liste plateau en string FEN pour les fonctions le nécessitant
 def board_to_fen(board, couleur, status="endgame"):
@@ -69,7 +123,6 @@ def board_to_fen(board, couleur, status="endgame"):
             fen += str(empty_count)
         fen += '/'
     fen = fen[:-1]  # Remove the trailing '/'
-    roc = None
     if status == "ouverture":
         roc =  " KQkq - 0 1"
     else:
