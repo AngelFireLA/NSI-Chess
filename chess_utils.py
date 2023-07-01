@@ -173,6 +173,10 @@ def couleur_oppose(couleur:str):
         return "noir"
     elif couleur == "noir":
         return "blanc"
+    elif couleur == 1:
+        return -1
+    elif couleur == -1:
+        return 1
     else:
         return None
 

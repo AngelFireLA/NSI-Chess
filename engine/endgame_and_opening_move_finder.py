@@ -46,8 +46,8 @@ def get_best_move_from_opening_book(grille, couleur):
     import random
     with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
         entries = list(reader.find_all(board))
-        valid_entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
-
+        entries = [entry for entry in entries if entry.move != chess.Move.from_uci("c7c5")]
+        print(entries)
         if entries:
             total_weight = sum(entry.weight for entry in entries)
             random_weight = random.randint(1, total_weight)
@@ -62,6 +62,8 @@ def get_best_move_from_opening_book(grille, couleur):
                 # you can handle it here, such as selecting a default move.
                 with chess.polyglot.open_reader("opening_book/book.bin") as reader1:
                     entries = list(reader1.find_all(board))
+                    entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
+
                     if entries:
                         total_weight = sum(entry.weight for entry in entries)
                         random_weight = random.randint(1, total_weight)
@@ -84,6 +86,8 @@ def get_best_move_from_opening_book(grille, couleur):
             # such as selecting a default move.
             with chess.polyglot.open_reader("opening_book/book.bin") as reader2:
                 entries = list(reader2.find_all(board))
+                entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
+
                 if entries:
                     total_weight = sum(entry.weight for entry in entries)
                     random_weight = random.randint(1, total_weight)
@@ -101,7 +105,7 @@ def get_best_move_from_opening_book(grille, couleur):
                     # If no opening moves are available, you can handle it here,
                     # such as selecting a default move.
                     return None
-
+    print(f"best move is {best_move}")
     return convert_move(best_move)
 
 

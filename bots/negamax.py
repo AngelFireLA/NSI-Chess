@@ -1,4 +1,6 @@
 import random
+import time
+
 import chess_utils
 from engine.pieces.piece import Roi
 import copy
@@ -329,11 +331,13 @@ def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=
     #captures de roi (donc echec et mat)
     other_captures = []
     quiet_moves = set()
-
+    king_captures = []
     capture_moves = set(chess_utils.possible_captures_ou_promotions(couleur, board))
-
     for piece, move in piece_moves:
         if (piece, move) in capture_moves:
+            if piece.type_de_piece == "roi":
+                king_captures.append((piece, move))
+                continue
             target_square = (piece.x + move[0], piece.y + move[1])
             target_piece = board[target_square[1]][target_square[0]]
             captured_piece_value = target_piece.valeur if target_piece else 0
@@ -357,20 +361,23 @@ def move_ordering(piece_moves, board, couleur, killer_moves, iterative_deepning=
     # Ajoute le mouvement de variation principale au début de la liste des mouvements s'il existe.
     if pv_move is not None:
         if iterative_deepning:
-            ordered_moves = best_moves_from_inferior_depth + [pv_move]  + killer_moves + other_captures + quiet_moves
+            ordered_moves = king_captures + best_moves_from_inferior_depth + [pv_move]  + killer_moves + other_captures + quiet_moves
         else:
-            ordered_moves = [pv_move]  + killer_moves + other_captures + quiet_moves
+            ordered_moves = king_captures + [pv_move]  + killer_moves + other_captures  + quiet_moves
 
     else:
         if iterative_deepning:
-            ordered_moves = best_moves_from_inferior_depth + killer_moves + other_captures + quiet_moves
+            ordered_moves = king_captures + best_moves_from_inferior_depth + killer_moves + other_captures  + quiet_moves
         else:
-            ordered_moves = killer_moves + other_captures + quiet_moves
+            ordered_moves = king_captures + killer_moves + other_captures + quiet_moves
     return ordered_moves
 
 
+best_move_global = None
+should_stop = False
 #Fonction principale du bot qui recherche le meilleur coup
 def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, initial_depth=4):
+    global  best_move_global, should_stop, killer_moves_history, best_moves_from_inferior_depth
     if color == 1:
         couleur = "blanc"
     else:
@@ -402,6 +409,7 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
 
     #Boucle principale qui itère sur les coups
     for piece, move in ordered_moves:
+
         #On duplique les pièces et le plateau pour ne pas les modifier eux directement
         new_board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
 
@@ -452,18 +460,23 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
     return alpha, best_move
 
 
+start_time = None
+time_limit = None
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
 def iterative_deepening_negamax(board, couleur, final_depth):
-    global best_moves_from_inferior_depth, transposition_table, zobrist
+    global best_moves_from_inferior_depth, transposition_table, zobrist, start_time, time_limit
     board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
     best_score = None
     best_moves = []
+    start_time = time.time()
+    time_limit = 12.0
     for depth in range(2, final_depth + 1, 2):
         transposition_table = {}
         zobrist = []
         init_transposition()
         best_score, best_move = negascout(board, depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=depth)
         best_moves.append(best_move)
+        best_moves_from_inferior_depth.append(best_move)
     return best_score, best_moves[-1]
 
