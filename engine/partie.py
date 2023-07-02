@@ -3,7 +3,7 @@ import chess_utils
 from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
 import bots.negamax as negamax
 import time
-import endgame_and_opening_move_finder
+import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
 
 
 
@@ -21,6 +21,7 @@ class Partie:
         self.mode = mode
         self.depth = 6
         self.second_depth = 6
+        self.temps_de_reflexion = 1
         self.pgn = """[Event "Game"]
 [Site "Somewhere"]
 [Date "Sometime"]
@@ -306,7 +307,9 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 p.mode = "auto"
 
 #On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
-p.depth = 6
+p.depth = 4
+chess_utils.montrer_grille(p.grille)
+p.temps_de_reflexion = 10
 #p.run()
 
 
@@ -316,7 +319,7 @@ p.depth = 6
 #chess_interface.start_manuel(p)
 
 #Soit on peut le lancer, en semi-auto donc contre le bot
-chess_interface.start_semiauto(p, "blanc")
+#chess_interface.start_semiauto(p, "blanc")
 
 
 

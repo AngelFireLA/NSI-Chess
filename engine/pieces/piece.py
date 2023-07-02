@@ -22,16 +22,13 @@ class Roi(Piece):
     #Vérifie aussi si la pièce ne vas pas en dehors du plateau
     def get_patterne_possible(self, x, y):
         #Mouvements possibles à partir de notre pièce en fonction de notre position actuelle, première valeur est x et la seconde est y
-        patterne = [(+1, +0), (+1, +1), (+0, +1), (-1, +1), (-1, +0), (-1, -1), (+0, -1), (+1, -1)]
+        patterne = [(2, 0), (-2, 0), (+1, +0), (+1, +1), (+0, +1), (-1, +1), (-1, +0), (-1, -1), (+0, -1), (+1, -1)]
         # Vérifie si la pièce ne va pas en dehors du plateau
         for i in range(len(patterne) - 1, -1, -1):
             if x + patterne[i][0] < 0 or x + patterne[i][0] > 7 or y + patterne[i][1] < 0 or y + \
                     patterne[i][1] > 7:
                 patterne.pop(i)
         #Pour le roi, c'est les mouvements de roc s'il n'a pas encore bouger
-        if not self.moved:
-            patterne.append((2, 0))
-            patterne.append((-2, 0))
         return patterne
 
     #Pareil pour toutes les pièces :  Vérifie si chaque coup est légal en prenant en comptes les autres pièces
@@ -44,7 +41,7 @@ class Roi(Piece):
             # Le prochain if et elif sont les cas spéciaux du roc
             # petit roc
             if move == (2, 0):
-                if self.x + 3 <= 7:
+                if self.x + 3 <= 7 and not self.moved:
                     if chess_utils.get_piece(grille, self.x + 3, self.y):
                         # Récupère la tour et si elle y est, la déplace où elle devrait
                         piece = chess_utils.get_piece(grille, self.x + 3, self.y)
@@ -62,7 +59,7 @@ class Roi(Piece):
                     continue
             # grand roc
             elif move == (-2, 0):
-                if self.x - 4 >= 0:
+                if self.x - 4 >= 0 and not self.moved:
                     # même commentaires que pour l'autre roc
                     if chess_utils.get_piece(grille, self.x - 4, self.y):
                         piece: Piece = chess_utils.get_piece(grille, self.x - 4, self.y)
@@ -235,7 +232,7 @@ class Pion(Piece):
 
 class Cavalier(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
-        super().__init__(couleur, "cavalier", x, y, 320)
+        super().__init__(couleur, "cavalier", x, y, 300)
     def copy(self):
         new_piece = Cavalier(self.couleur, self.x, self.y)
 
@@ -454,7 +451,7 @@ class Dame(Piece):
 
 class Fou(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
-        super().__init__(couleur, "fou", x, y, 330)
+        super().__init__(couleur, "fou", x, y, 320)
     def copy(self):
         new_piece = Fou(self.couleur,  self.x, self.y)
 

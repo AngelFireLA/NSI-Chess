@@ -10,17 +10,20 @@ def get_best_endgame_move_from_tablebase(board, couleur, variant="standard"):
     url = f"http://tablebase.lichess.ovh/{variant}"
     fen = board_to_fen(board, couleur)
     params = {"fen": fen}
-
+    i = 0
     while True:
         response = requests.get(url, params=params)
-        print(response.text)
+
         if response.status_code == 200:  # Successful response
             break
         elif response.status_code == 429:  # Too Many Requests
             print("Trop de requêtes par le bot, attendre 60 secondes.")
             time.sleep(60)  # Wait for 60 seconds
+            i+=1
         else:
             print("Error:", response.status_code)
+            return None
+        if i == 3:
             return None
 
     try:

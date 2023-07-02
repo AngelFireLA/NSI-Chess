@@ -6,11 +6,11 @@ import chess_utils
 
 #Les pièces sont plus ou moins fortes selon leur position, cela aide le bot à comprendre où il faudrait mieux placer les pièces.
 piece_values = {
-    "pion": 200,
-    "cavalier": 620,
-    "fou": 630,
-    "tour": 1000,
-    "dame": 1800,
+    "pion": 100,
+    "cavalier": 300,
+    "fou": 320,
+    "tour": 500,
+    "dame": 900,
     "roi": 99999999999
 }
 
@@ -60,17 +60,6 @@ white_queen_table = [
     [-20, -10, -10, -5, -5, -10, -10, -20]
 ]
 
-white_king_table = [
-    [-30, -40, -40, -50, -50, -40, -40, -30],
-    [-30, -40, -40, -50, -50, -40, -40, -30],
-    [-30, -40, -40, -50, -50, -40, -40, -30],
-    [-30, -40, -40, -50, -50, -40, -40, -30],
-    [-20, -30, -30, -40, -40, -30, -30, -20],
-    [-10, -20, -20, -20, -20, -20, -20, -10],
-    [20, 20, 0, 0, 0, 0, 20, 20],
-    [20, 30, 10, 0, 0, 10, 30, 20]
-]
-
 white_pawn_table = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [50, 50, 50, 50, 50, 50, 50, 50],
@@ -80,6 +69,17 @@ white_pawn_table = [
     [5, -5, -10, 0, 0, -10, -5, 5],
     [5, 10, 10, -20, -20, 10, 10, 5],
     [0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+white_king_table = [
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-30, -40, -40, -50, -50, -40, -40, -30],
+    [-20, -30, -30, -40, -40, -30, -30, -20],
+    [-10, -20, -20, -20, -20, -20, -20, -10],
+    [20, 20, 0, 0, 0, 0, 20, 20],
+    [20, 30, 10, 0, 0, 10, 30, 20]
 ]
 
 
@@ -469,9 +469,9 @@ start_time = None
 time_limit = None
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
-def iterative_deepening_negamax(board, couleur, final_depth):
+def iterative_deepening_negamax(board, couleur, final_depth, time_limite=120):
     global transposition_table, zobrist, start_time, time_limit
-    time_limit = 12000.0
+    time_limit = time_limite
     start_time = time.time()
     transposition_table = {}
     zobrist = []

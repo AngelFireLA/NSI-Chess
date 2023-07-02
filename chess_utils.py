@@ -20,21 +20,11 @@ def get_piece_type(grille: list, x:int, y:int):
     else:
         return None
 
-def get_couleur_str(couleur:int):
-    couleur_str = None
-    if couleur == 1:
-        couleur_str = "blanc"
-    elif couleur ==-1:
-        couleur_str = "noir"
-    return couleur_str
+def get_couleur_str(couleur: int) -> str:
+    return {1: "blanc", -1: "noir"}.get(couleur)
 
-def get_couleur_int(couleur:str):
-    couleur_int = None
-    if couleur == "blanc":
-        couleur_int = 1
-    elif couleur == "noir":
-        couleur_int = -1
-    return couleur_int
+def get_couleur_int(couleur: str) -> int:
+    return {"blanc": 1, "noir": -1}.get(couleur)
 
 #Récupérer la liste de pièces bougeables pour un camp dans une position
 def liste_pieces_bougeables(grille, couleur: str) -> list:
@@ -67,35 +57,26 @@ def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
     return liste
 
 #Récupère toutes les pièces et récupèrent chacun tous les coups possibles
-def liste_coups_legaux(couleur, grille, peux_capturer_allier=False):
+def liste_coups_legaux(couleur, grille):
     pieces = liste_pieces_bougeables(grille, couleur)
-    if peux_capturer_allier:
-        coups = [
-            (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille, peut_capturer_allie=True)
-        ]
-    else:
-        coups = [
+    return [
             (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille)
         ]
-    return coups
 
 #Fonction qui détermine si un camp n'a plus de roi
 def check_si_roi_restant(grille):
-    compteur_de_roi = {"blanc":0, "noir":0}
-    for i in grille:
-        for j in i:
-            if j and j.type_de_piece == "roi":
-                if j.couleur == "blanc":
-                    compteur_de_roi["blanc"] += 1
-                if j.couleur == "noir":
-                    compteur_de_roi["noir"] += 1
+    is_king = {"blanc": False, "noir": False}
+    for row in grille:
+        for piece in row:
+            if piece and piece.type_de_piece == "roi":
+                is_king[piece.couleur] = True
 
-    if compteur_de_roi["blanc"] == 0:
+    if not is_king["blanc"]:
         return "noir"
-    elif compteur_de_roi["noir"] == 0:
+    elif not is_king["noir"]:
         return "blanc"
-    else:
-        return False
+
+    return False
 
 #Montre la grille visuellement plus jolie mais toujours textuelle
 def montrer_grille(grille):
@@ -114,15 +95,54 @@ def montrer_grille(grille):
 
 #Vérifie s'il ne reste que des rois sur le plateau, donc si c'est égalité
 def roi_contre_roi(grille) -> bool:
-    pieces_restantes = []
+    type_de_pieces_restantes = {"blanc":{"fou": 0, "cavalier": 0, "roi": 0, "dame": 0, "pion": 0, "tour": 0}, "noir":{"fou": 0, "cavalier": 0, "roi":0, "dame": 0, "pion": 0, "tour": 0}}
     for i in grille:
         for j in i:
             if j:
-                pieces_restantes.append(j)
-    for piece in pieces_restantes:
-        if not piece.type_de_piece == "roi":
+                type_de_pieces_restantes[j.couleur][j.type_de_piece]+=1
+
+    if insufficient_material(type_de_pieces_restantes):
+        return True
+
+
+def insufficient_material(type_de_pieces_restantes):
+    blanc = type_de_pieces_restantes["blanc"]
+    noir = type_de_pieces_restantes["noir"]
+
+    # Check if there are any pawns, queens, or rooks on the board
+    for color in [blanc, noir]:
+        if color["pion"] > 0 or color["dame"] > 0 or color["tour"] > 0:
             return False
-    return True
+
+    # Check for lone king
+    if (blanc["roi"] == 1 and sum(blanc.values()) == 1) and (noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+
+    # Check for king and bishop, or king and knight
+    if (blanc["roi"] == 1 and blanc["fou"] == 1 and sum(blanc.values()) == 2) and (
+            noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+    if (blanc["roi"] == 1 and blanc["cavalier"] == 1 and sum(blanc.values()) == 2) and (
+            noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+
+    # swap colors and repeat checks
+    if (noir["roi"] == 1 and noir["fou"] == 1 and sum(noir.values()) == 2) and (
+            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+        return True
+    if (noir["roi"] == 1 and noir["cavalier"] == 1 and sum(noir.values()) == 2) and (
+            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+        return True
+
+    # Check for king and two knights
+    if (blanc["roi"] == 1 and blanc["cavalier"] == 2 and sum(blanc.values()) == 3) and (
+            noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+    if (noir["roi"] == 1 and noir["cavalier"] == 2 and sum(noir.values()) == 3) and (
+            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+        return True
+
+    return False
 
 #Fonctions qui comptent les points de chaque camp sans compter les rois
 def points(grille):
@@ -150,6 +170,8 @@ def possible_captures_ou_promotions(couleur: str, grille):
         if j and j.couleur != piece.couleur:
             captures.append((piece, move))
     return captures
+
+
 
 
 #Récupérer toutes les pièces qui sont menacée d'un camp spécifique
