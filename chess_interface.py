@@ -9,7 +9,7 @@ import bots.negamax as negamax
 
 from engine.pieces.piece import Roi
 
-DEPTH = 4
+DEPTH = 6
 #Position d'une pièces sur la case (0, 0)
 initial_x = 50
 initial_y = 50
@@ -60,7 +60,8 @@ def get_bot_move(grid, tour, depth, partie):
   else:
     couleur = -1
   start_time = time.time()
-  opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
+  #opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
+  opening = None
   if opening:
     piece, move = opening
     best_score, best_combo = 69, (grid[piece[1]][piece[0]], move)
@@ -86,13 +87,13 @@ def get_bot_move(grid, tour, depth, partie):
   if not best_combo:
     return None
   best_piece, best_move = best_combo
-  print(best_score)
+  print(best_combo, best_score)
   end_time = time.time()
   total_time = end_time - start_time
 
   print(f"Time taken: {total_time} seconds")
 
-  print(best_combo)
+  print()
   best_piece: Roi
   chess_utils.montrer_grille(grid)
   grid = best_piece.move(best_move[0], best_move[1], grid)
@@ -205,7 +206,7 @@ def start_manuel(partie):
 
             partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
 
-            chess_utils.montrer_grille(partie.grille)
+            #chess_utils.montrer_grille(partie.grille)
             #Reset les variables pour attendre la prochaine pièce à sélectionner
             selected_piece = None
             selected = None
@@ -254,6 +255,7 @@ def start_semiauto(partie, start_tour:str):
   pygame.init()
   selected_piece = None
   fenetre = pygame.display.set_mode((800, 800))
+  negamax.init_transposition()
 
   bg = pygame.image.load("images/plateau jeu d'echec.png").convert_alpha()
   selected_square = pygame.image.load("images/selected.png")
@@ -308,7 +310,7 @@ def start_semiauto(partie, start_tour:str):
         for square_rect in selected_squares:
           if square_rect.collidepoint(mouse_pos):
             # Send the message here
-            print("Selected square:", coords_from_pixel(square_rect.center[0], square_rect.center[1]))
+            #print("Selected square:", coords_from_pixel(square_rect.center[0], square_rect.center[1]))
             converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
             from engine.endgame_and_opening_move_finder import convert_custom_move
             if selected_piece.type_de_piece == "pion":
@@ -341,7 +343,6 @@ def start_semiauto(partie, start_tour:str):
         bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH, partie)
         #Si le bot retourne None c'est que la partie est finie
         if not bot_answer:
-          print(chess_utils.check_si_roi_restant(partie.grille))
           if chess_utils.check_si_roi_restant(partie.grille):
             print(
               f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(partie.grille)} par capture du roi")

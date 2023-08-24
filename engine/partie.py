@@ -1,7 +1,7 @@
 import chess_interface
 import chess_utils
 from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
-import bots.negamax as negamax
+import bots.negascout_last as negamax
 import time
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
 
@@ -151,7 +151,7 @@ class Partie:
                                     best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
                                                                                                  depth)
 
-                            #utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
+                            #utilise l'algorithme de recherche du meilleur coup de negascout_last.py de manière normale
                             else:
                                 negamax.init_transposition()
                                 best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur, depth)
@@ -307,7 +307,7 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 p.mode = "auto"
 
 #On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
-p.depth = 4
+p.depth = 5
 chess_utils.montrer_grille(p.grille)
 p.temps_de_reflexion = 10
 #p.run()
@@ -319,7 +319,8 @@ p.temps_de_reflexion = 10
 #chess_interface.start_manuel(p)
 
 #Soit on peut le lancer, en semi-auto donc contre le bot
-#chess_interface.start_semiauto(p, "blanc")
+
+chess_interface.start_semiauto(p, "blanc")
 
 
 
