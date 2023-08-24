@@ -270,7 +270,7 @@ def evaluate_board(grid, couleur: int):
 
 
 # Initialize divers variables utilisées dans l'algorithme pour réduire le temps de recherche
-move_history = [[0] * 8 for _ in range(8)]  # Assuming an 8x8 chessboard size
+#move_history = [[0] * 8 for _ in range(8)]  # Assuming an 8x8 chessboard size
 
 max_depth = 10
 
@@ -330,19 +330,17 @@ def zobrist_hash(board, depth):
 
     return hash_value
 
-
-
 def get_transposition_entry(hash_value, color, depth):
     if hash_value in transposition_table:
-        entry = transposition_table[hash_value].get(color)
+        entry:dict = transposition_table[hash_value].get(color)
         if entry and entry.get('depth', 0) >= depth:
-            return entry.get('score')
+            return entry.get('score'), entry.get('move')
     return None
 
-def store_transposition(hash_value, color, score, depth):
+def store_transposition(hash_value, color, score, depth, move):
     if hash_value not in transposition_table:
         transposition_table[hash_value] = {}
-    transposition_table[hash_value][color] = {'score': score, 'depth': depth}
+    transposition_table[hash_value][color] = {'score': score, 'depth': depth, 'move': move}
 
 
 
@@ -376,17 +374,18 @@ def move_ordering(piece_moves, board, couleur):
     other_captures = [(piece, move) for piece, move, _ in other_captures]
 
     # Trie les "quiet_moves" en fonction des valeurs d'historique de mouvement dans l'ordre décroissant.
-    quiet_moves = sorted(quiet_moves, key=lambda x: move_history[x[1][1]][x[1][0]], reverse=True)
+    #quiet_moves = sorted(quiet_moves, key=lambda x: move_history[x[1][1]][x[1][0]], reverse=True)
 
     # Ajoute le mouvement de variation principale au début de la liste des mouvements s'il existe.
-    ordered_moves = king_captures + other_captures + quiet_moves
+    ordered_moves = list(king_captures) + list(other_captures) + list(quiet_moves)
     return ordered_moves
 
 
 best_move_global = None
 should_stop = False
+BIG_VALUE = 9999999
 #Fonction principale du bot qui recherche le meilleur coup
-def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, initial_depth=4):
+def negascout(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_depth=4):
     global  best_move_global, should_stop, best_moves_from_inferior_depth
     if color == 1:
         couleur = "blanc"
@@ -396,30 +395,22 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
     #Récupère si possible le score de al table de transposition
     hash_value = zobrist_hash(board, depth)
     cached_score = get_transposition_entry(hash_value, color, depth)
-
+    if cached_score:
+        evalu = cached_score
+    else:
+        #On calcule le score de l'évaluation du plateau
+        evalu = evaluate_board(board, color)
     #Si la partie est fini ou si la recherche a atteint son maximum
     if depth == 0 or chess_utils.check_si_roi_restant(board):
-        if cached_score is not None:
-            score = cached_score
-        else:
-            score = evaluate_board(board, color)
-        store_transposition(hash_value, color, score, depth)
-        return score, None
+        return evalu
 
-    best_move = None
-    b = beta
-
+    best_value = -BIG_VALUE
     #trie les mouvements
     all_moves = chess_utils.liste_coups_legaux(couleur, board)
-    if depth == initial_depth:
-        ordered_moves = move_ordering(all_moves, board, couleur)
-    else:
-        ordered_moves = move_ordering(all_moves, board, couleur)
+    ordered_moves = move_ordering(all_moves, board, couleur)
 
     #Boucle principale qui itère sur les coups
     for piece, move in ordered_moves:
-        if time.time() - start_time > time_limit:
-            break
         #On duplique les pièces et le plateau pour ne pas les modifier eux directement
         new_board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
 
@@ -427,42 +418,23 @@ def negascout(board, depth, alpha=float('-inf'), beta=float('inf'), color=1, ini
 
         #On modifie le plateau avec le coup à tester
         new_board = new_piece.move(move[0], move[1], new_board)
-        target_square = (piece.x + move[0], piece.y + move[1])
-        move_history[target_square[1]][target_square[0]] += 1
 
         #On va en récursivité pour tester les prochains coups, les conditions sont de l'optimization avec divers techniques trouvées
-        if b == beta or b == alpha + 1:
-            score, _ = negascout(new_board, depth - 1, -b, -alpha, -color, initial_depth)
-        else:
-            score, _ = negascout(new_board, depth - 1, -b, -alpha - 1, -color, initial_depth)
-            if alpha < score < beta:
-                score, _ = negascout(new_board, depth - 1, -beta, -score, -color, initial_depth)
+        score= negascout(new_board, depth - 1, -beta, -alpha, -color, initial_depth)
+        value = -score
+
+        if value > best_value:
+            best_value = value
+            if depth == initial_depth:
+                best_move_global = (piece, move)
+
+        alpha = max(alpha, value)
 
         if alpha >= beta:
             break
 
-
-        value = -score
-        if value > alpha:
-            alpha = value
-            best_move = (piece, move)
-
-        b = alpha + 1
-
-    for piece, move in ordered_moves:
-        target_square = (piece.x + move[0], piece.y + move[1])
-        move_history[target_square[1]][target_square[0]] -= 1
-
-
-    if not ordered_moves:
-        score = evaluate_board(board, color)
-        store_transposition(hash_value, color, score, depth)
-        return score, None
-
-
-
-    store_transposition(hash_value, color, alpha, depth)
-    return alpha, best_move
+    store_transposition(hash_value, color, best_value, depth, best_move_global)
+    return best_value
 
 
 start_time = None
@@ -470,12 +442,14 @@ time_limit = None
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
 def iterative_deepening_negamax(board, couleur, final_depth, time_limite=120):
-    global transposition_table, zobrist, start_time, time_limit
+
+    global  start_time, time_limit, best_move_global, pv_move
+
     time_limit = time_limite
     start_time = time.time()
-    transposition_table = {}
-    zobrist = []
-    init_transposition()
-    best_score, best_move = negascout(board, final_depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=final_depth)
-    return best_score, best_move
+    print("depth : ", final_depth)
+    for i in range(1, 6):
+        best_score = negascout(board, final_depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=final_depth)
+
+    return best_score, best_move_global
 
