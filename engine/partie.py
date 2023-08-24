@@ -1,20 +1,20 @@
+import time
+import bots.negamax as negamax
 import chess_interface
 import chess_utils
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
-import bots.negamax as negamax
-import time
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
-
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
+import time
 
 
 class Partie:
     def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1, mode="manuel"):
-        #setup pour voir si le plateau a été défini
+        # setup pour voir si le plateau a été défini
         self.setup = False
         self.points_blanc = points_blanc
         self.points_noir = points_noir
         self.terminee = False
-        #tour dans "a qui le tour" et pas la pièce
+        # tour dans "a qui le tour" et pas la pièce
         self.tour = tour
         self.type_de_partie = type_de_partie
         self.grille = None
@@ -31,7 +31,7 @@ class Partie:
 [Result "*"]\n
         """
 
-    #Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
+    # Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
     # on peut le générer pour n'importe quel position
     def setup_from_fen(self, fen: str):
         grille = []
@@ -55,7 +55,7 @@ class Partie:
         self.grille = grille
         self.setup = True
 
-    #Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
+    # Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
     def piece_from_symbol(self, symbol: str):
         symbol_piece_dict = {
             'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
@@ -65,15 +65,15 @@ class Partie:
         }
         return symbol_piece_dict[symbol]
 
-    #Boucle qui gère le début jusqu'à la fin d'une partie
+    # Boucle qui gère le début jusqu'à la fin d'une partie
     def run(self):
         if self.setup:
             if self.type_de_partie == "normale":
                 chess_utils.montrer_grille(self.grille)
-                #Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
+                # Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
                 i = 0
                 while not self.terminee:
-                    #manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
+                    # manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
                     if self.mode == "manuel":
                         inp_piece = input("Sélectionner une pièce :")
                         # q pour "quitter"
@@ -101,7 +101,6 @@ class Partie:
                             f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(self.grille)}")
                         inp_coup = input("Sélectionner le coup choisi :")
 
-
                         # r pour recommencer, si on ne veut plus jouer cette pièce
                         if inp_coup == "r":
                             continue
@@ -120,7 +119,7 @@ class Partie:
                         chess_utils.montrer_grille(self.grille)
                     if self.mode == "auto":
                         print(i)
-                        i+=1
+                        i += 1
 
                         if self.tour == "blanc":
                             couleur = 1
@@ -128,18 +127,19 @@ class Partie:
                         else:
                             couleur = -1
                             depth = self.second_depth
-                        #Vérifie si la position est dans le livre d'ouverture, et si oui jouer le coup recommandé
+                        # Vérifie si la position est dans le livre d'ouverture, et si oui jouer le coup recommandé
                         start_time = time.time()
-                        opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille, self.tour)
+                        opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille,
+                                                                                                  self.tour)
                         if opening:
                             piece, move = opening
                             best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
 
                         else:
-                            #S'il y a 7 pièces au moins restantes sur le plateau, utiliser le solveur de fin de partie
+                            # S'il y a 7 pièces au moins restantes sur le plateau, utiliser le solveur de fin de partie
                             if len(chess_utils.liste_pieces_bougeables(self.grille, self.tour)) + len(
                                     chess_utils.liste_pieces_bougeables(self.grille, chess_utils.couleur_oppose(
-                                            self.tour))) <= 7 and not chess_utils.check_si_roi_restant(self.grille):
+                                        self.tour))) <= 7 and not chess_utils.check_si_roi_restant(self.grille):
                                 meilleur_coup = endgame_and_opening_move_finder.get_best_endgame_move_from_tablebase(
                                     self.grille, self.tour)
                                 if meilleur_coup:
@@ -147,15 +147,16 @@ class Partie:
                                     best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
                                 else:
                                     negamax.init_transposition()
-                                    #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
+                                    # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
                                     best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
                                                                                                  depth)
 
-                            #utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
+                            # utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
                             else:
                                 negamax.init_transposition()
-                                best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur, depth)
-                        #Récupère meilleur pièce, coup et score
+                                best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
+                                                                                             depth)
+                        # Récupère meilleur pièce, coup et score
                         best_piece, best_move = best_combo
                         print(best_score)
                         end_time = time.time()
@@ -163,13 +164,14 @@ class Partie:
 
                         print(f"Time taken: {total_time} seconds")
 
-                        print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
+                        print(
+                            f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
                         best_piece: Roi
-                        #Effectue le meilleur coup trouvé
+                        # Effectue le meilleur coup trouvé
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
                         chess_utils.montrer_grille(self.grille)
                     if self.mode == "semi-auto":
-                        #c'est juste une combinaison de 2 précédentes qui change selon à qui c'est le tour
+                        # c'est juste une combinaison de 2 précédentes qui change selon à qui c'est le tour
                         if self.tour == "blanc":
                             inp_piece = input("Sélectionner une pièce :")
                             # q pour "quitter"
@@ -210,7 +212,7 @@ class Partie:
                             while not coup:
                                 inp_coup = input("Sélectionner nouvelle coordonnées :")
                                 coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                                               self.get_grille())
+                                                               self.grille)
                                 print(coup)
                             print(f"Vous avez jouer {inp_coup}")
                             # Met à jour le plateau après le mouvement
@@ -241,12 +243,14 @@ class Partie:
                                         best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
                                     else:
                                         negamax.init_transposition()
-                                        #best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                                        best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, depth, couleur)
+                                        # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
+                                        best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, depth,
+                                                                                                     couleur)
                                 else:
                                     negamax.init_transposition()
                                     # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                                    best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur, depth)
+                                    best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
+                                                                                                 depth)
 
                             best_piece, best_move = best_combo
                             print(best_score)
@@ -259,14 +263,13 @@ class Partie:
                             self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
                             chess_utils.montrer_grille(self.grille)
 
-
-                    #change le tour
+                    # change le tour
                     if self.tour == "blanc":
                         self.tour = "noir"
                     else:
                         self.tour = "blanc"
                     self.points_blanc, self.points_noir = chess_utils.points(self.grille)
-                    #s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
+                    # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
                     echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
                     if echec_et_mat:
                         print(
@@ -280,9 +283,11 @@ class Partie:
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 
-#Partie exemple
+
+# Partie exemple
 p = Partie()
 p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+
 # import cProfile
 # import pstats
 #
@@ -294,7 +299,7 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 #     couleur = -1
 #
 # with cProfile.Profile() as pr:
-#     best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, 4)
+#     best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, 5)
 #
 # best_piece, best_move = best_combo
 # print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
@@ -303,40 +308,18 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 # stats.sort_stats(pstats.SortKey.TIME)
 # stats.print_stats()
 
-#"auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
+# "auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
 p.mode = "auto"
 
-#On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
-p.depth = 4
-chess_utils.montrer_grille(p.grille)
+# On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
+p.depth = 5
 p.temps_de_reflexion = 10
-#p.run()
+# chess_utils.montrer_grille(p.grille)
+# p.run()
 
 
+# Soit on peut lancer le jeux avec l'interface graphique, en manuel
+# chess_interface.start_manuel(p)
 
-
-#Soit on peut lancer le jeux avec l'interface graphique, en manuel
-#chess_interface.start_manuel(p)
-
-#Soit on peut le lancer, en semi-auto donc contre le bot
-#chess_interface.start_semiauto(p, "blanc")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Soit on peut le lancer, en semi-auto donc contre le bot
+chess_interface.start_semiauto(p, "blanc")

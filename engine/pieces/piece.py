@@ -13,7 +13,7 @@ class Piece:
 
 class Roi(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
-        super().__init__(couleur, "roi", x, y, 99999999999)
+        super().__init__(couleur, "roi", x, y, 30000)
     def copy(self):
         new_piece = Roi(self.couleur,  self.x, self.y)
         new_piece.moved = self.moved

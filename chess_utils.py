@@ -174,19 +174,19 @@ def possible_captures_ou_promotions(couleur: str, grille):
 
 
 
-#Récupérer toutes les pièces qui sont menacée d'un camp spécifique
-def liste_pieces_en_capture(grille, couleur:int):
-    couleur_str = get_couleur_str(-couleur)
-    nos_coups = liste_coups_legaux(couleur_str, grille, peux_capturer_allier=True)
-    capturable = [(piece,move) for piece, move in possible_captures_ou_promotions(couleur_str, grille)]
-    for piece, move in capturable[:]:  # Iterate over a copy of capturable list to safely remove elements
-        if piece.type_de_piece != 'pion':
-            attacked_pos = (piece.x + move[0], piece.y + move[1])
-            for ally_piece, ally_move in nos_coups:
-                if attacked_pos in (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
-                    capturable.remove((piece, move))
-                    break
-    return capturable
+# #Récupérer toutes les pièces qui sont menacée d'un camp spécifique
+# def liste_pieces_en_capture(grille, couleur:int):
+#     couleur_str = get_couleur_str(-couleur)
+#     nos_coups = liste_coups_legaux(couleur_str, grille, peux_capturer_allier=True)
+#     capturable = [(piece,move) for piece, move in possible_captures_ou_promotions(couleur_str, grille)]
+#     for piece, move in capturable[:]:  # Iterate over a copy of capturable list to safely remove elements
+#         if piece.type_de_piece != 'pion':
+#             attacked_pos = (piece.x + move[0], piece.y + move[1])
+#             for ally_piece, ally_move in nos_coups:
+#                 if attacked_pos in (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
+#                     capturable.remove((piece, move))
+#                     break
+#     return capturable
 
 def couleur_oppose(couleur:str):
     if  couleur == "blanc":
