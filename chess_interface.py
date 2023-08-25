@@ -61,6 +61,7 @@ def get_bot_move(grid, tour, depth, partie):
     couleur = -1
   start_time = time.time()
   opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
+
   if opening:
     piece, move = opening
     best_score, best_combo = 69, (grid[piece[1]][piece[0]], move)
@@ -77,12 +78,12 @@ def get_bot_move(grid, tour, depth, partie):
         negamax.init_transposition()
         # best_score, best_combo = negamax.negascout(grid, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
         best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur,
-                                                                     depth)
+                                                                     depth, partie.temps_de_reflexion)
 
     else:
       negamax.init_transposition()
       # best_score, best_combo = negamax.negascout(grid, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-      best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur, depth)
+      best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur, depth, partie.temps_de_reflexion)
   if not best_combo:
     return None
   best_piece, best_move = best_combo
@@ -96,6 +97,7 @@ def get_bot_move(grid, tour, depth, partie):
   best_piece: Roi
   chess_utils.montrer_grille(grid)
   grid = best_piece.move(best_move[0], best_move[1], grid)
+  partie.compteur_de_tour+=1
 
   surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
   coords = grille[best_piece.y][best_piece.x]
@@ -204,7 +206,7 @@ def start_manuel(partie):
             converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
 
             partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
-
+            partie.compteur_de_tour+=1
             chess_utils.montrer_grille(partie.grille)
             #Reset les variables pour attendre la prochaine pièce à sélectionner
             selected_piece = None
@@ -317,7 +319,7 @@ def start_semiauto(partie, start_tour:str):
               partie.pgn+=f" {tour_num}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
             partie.grille = selected_piece.move(converted_coords[0] - selected_piece.x,
                                                 converted_coords[1] - selected_piece.y, partie.grille)
-
+            partie.compteur_de_tour+=1
             selected_piece = None
             selected = None
             selected_squares.clear()
@@ -331,17 +333,16 @@ def start_semiauto(partie, start_tour:str):
         selected_bot = True
         #Affiche le emssage d'attente pendant que le bot choisi le coup
         fenetre_originale = fenetre.copy()
-        fenetre.fill((255, 255, 255))
         bot_reflechit = afficher_text(fenetre, "Le bot réfléchit au meilleur coup...",
                                       fenetre.get_width(), fenetre.get_height(), 50,
                                       "Impact", center=True)
         fenetre.blit(bot_reflechit[0], bot_reflechit[1])
+
         pygame.display.flip()
 
         bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH, partie)
         #Si le bot retourne None c'est que la partie est finie
         if not bot_answer:
-          print(chess_utils.check_si_roi_restant(partie.grille))
           if chess_utils.check_si_roi_restant(partie.grille):
             print(
               f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(partie.grille)} par capture du roi")
@@ -361,7 +362,7 @@ def start_semiauto(partie, start_tour:str):
         fenetre.blit(fenetre_originale, (0, 0))
         pygame.display.update()
         partie.grille = bot_answer[1]
-        partie.tour = "blanc"
+        partie.tour = chess_utils.couleur_oppose(partie.tour)
 
     partie.points_blanc, partie.points_noir = chess_utils.points(partie.grille)
     if chess_utils.check_si_roi_restant(partie.grille) and partie_finie:

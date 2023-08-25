@@ -21,7 +21,8 @@ class Partie:
         self.mode = mode
         self.depth = 6
         self.second_depth = 6
-        self.temps_de_reflexion = 1
+        self.temps_de_reflexion = None
+        self.compteur_de_tour = 0
         self.pgn = """[Event "Game"]
 [Site "Somewhere"]
 [Date "Sometime"]
@@ -71,56 +72,10 @@ class Partie:
             if self.type_de_partie == "normale":
                 chess_utils.montrer_grille(self.grille)
                 # Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
-                i = 0
-                while not self.terminee:
-                    # manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
-                    if self.mode == "manuel":
-                        inp_piece = input("Sélectionner une pièce :")
-                        # q pour "quitter"
-                        if inp_piece == "q":
-                            self.terminee = True
-                            break
-                        # p pour "points"
-                        if inp_piece == "p":
-                            print(self.points_blanc, self.points_noir)
-                            continue
-                        # Récupère le contenu de la case aux corrdonées données
-                        piece_selectionner: Piece = chess_utils.get_piece(self.grille,
-                                                                          int(inp_piece.split(',')[0]),
-                                                                          int(inp_piece.split(',')[1]))
-                        # Si le joueur à sélectionner une case vide, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
-                        if not piece_selectionner:
-                            print("Erreur, la case sélectionnée est vide.")
-                            continue
-                        # Si le joueur à sélectionner une pièce de son adversaire à jouer, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
-                        if piece_selectionner.couleur != self.tour:
-                            print("Cette pièce n'est pas votre")
-                            continue
-                        print(f"Vous avez sélectionné {piece_selectionner.type_de_piece}")
-                        print(
-                            f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(self.grille)}")
-                        inp_coup = input("Sélectionner le coup choisi :")
-
-                        # r pour recommencer, si on ne veut plus jouer cette pièce
-                        if inp_coup == "r":
-                            continue
-                        coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                                       self.grille)
-                        # boucle qui s'active que si le coup envoyé par le joueur n'est pas dans la liste des coups possibles, et donc redemande un coup au joueur,
-                        # jusqu'à ce qu'il envoie un coup valide
-                        while not coup:
-                            inp_coup = input("Sélectionner nouvelle coordonnées :")
-                            coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                                           self.grille)
-                            print(coup)
-                        print(f"Vous avez jouer {inp_coup}")
-                        # Met à jour le plateau après le mouvement
-                        self.grille = coup
-                        chess_utils.montrer_grille(self.grille)
-                    if self.mode == "auto":
-                        print(i)
-                        i += 1
-
+                negamax.init_transposition()
+                if self.mode == "auto":
+                    while not self.terminee:
+                        # manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
                         if self.tour == "blanc":
                             couleur = 1
                             depth = self.depth
@@ -146,7 +101,7 @@ class Partie:
                                     piece, move = meilleur_coup
                                     best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
                                 else:
-                                    negamax.init_transposition()
+
                                     # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
                                     best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
                                                                                                  depth)
@@ -170,156 +125,72 @@ class Partie:
                         # Effectue le meilleur coup trouvé
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
                         chess_utils.montrer_grille(self.grille)
-                    if self.mode == "semi-auto":
-                        # c'est juste une combinaison de 2 précédentes qui change selon à qui c'est le tour
+                        # change le tour
                         if self.tour == "blanc":
-                            inp_piece = input("Sélectionner une pièce :")
-                            # q pour "quitter"
-                            if inp_piece == "q":
-                                self.terminee = True
-                                break
-                            # p pour "points"
-                            if inp_piece == "p":
-                                print(self.points_blanc, self.points_noir)
-                                continue
-                            # Récupère le contenu de la case aux corrdonées données
-                            try:
-                                piece_selectionner: Piece = chess_utils.get_piece(self.grille,
-                                                                                  int(inp_piece.split(',')[0]),
-                                                                                  int(inp_piece.split(',')[1]))
-                            except ValueError:
-                                piece_selectionner = None
-                            # Si le joueur à sélectionner une case vide, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
-                            if not piece_selectionner:
-                                print("Erreur, la case sélectionnée est vide.")
-                                continue
-                            # Si le joueur à sélectionner une pièce de son adversaire à jouer, ça recommence la boucle sans continuer pour que le joueur puisse entrer de nouvelles coordonnées
-                            if piece_selectionner.couleur != self.tour:
-                                print("Cette pièce n'est pas votre")
-                                continue
-                            print(f"Vous avez sélectionné {piece_selectionner.type_de_piece}")
-                            print(
-                                f"Voici la liste de coups possible : {piece_selectionner.liste_coups_legaux(self.grille)}")
-                            inp_coup = input("Sélectionner le coup choisi :")
-
-                            # r pour recommencer, si on ne veut plus jouer cette pièce
-                            if inp_coup == "r":
-                                continue
-                            coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                                           self.grille)
-                            # boucle qui s'active que si le coup envoyé par le joueur n'est pas dans la liste des coups possibles, et donc redemande un coup au joueur,
-                            # jusqu'à ce qu'il envoie un coup valide
-                            while not coup:
-                                inp_coup = input("Sélectionner nouvelle coordonnées :")
-                                coup = piece_selectionner.move(int(inp_coup.split(',')[0]), int(inp_coup.split(',')[1]),
-                                                               self.grille)
-                                print(coup)
-                            print(f"Vous avez jouer {inp_coup}")
-                            # Met à jour le plateau après le mouvement
-                            self.grille = coup
-                            chess_utils.montrer_grille(self.grille)
+                            self.tour = "noir"
                         else:
+                            self.tour = "blanc"
+                        self.points_blanc, self.points_noir = chess_utils.points(self.grille)
+                        self.compteur_de_tour+=1
+                        # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
+                        echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
+                        if echec_et_mat:
+                            print(
+                                f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(self.grille)} par capture du roi")
+                            self.terminee = True
 
-                            depth = self.depth
-                            # call negamax to find the best move
-                            if self.tour == "blanc":
-                                couleur = 1
-                            else:
-                                couleur = -1
-                            start_time = time.time()
-                            opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(self.grille,
-                                                                                                      self.tour)
-                            if opening:
-                                piece, move = opening
-                                best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
-                            else:
-                                if len(chess_utils.liste_pieces_bougeables(self.grille, self.tour)) + len(
-                                        chess_utils.liste_pieces_bougeables(self.grille, chess_utils.couleur_oppose(
-                                            self.tour))) <= 7 and not chess_utils.check_si_roi_restant(self.grille):
-                                    meilleur_coup = endgame_and_opening_move_finder.get_best_endgame_move_from_tablebase(
-                                        self.grille, self.tour)
-                                    if meilleur_coup:
-                                        piece, move = meilleur_coup
-                                        best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
-                                    else:
-                                        negamax.init_transposition()
-                                        # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                                        best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, depth,
-                                                                                                     couleur)
-                                else:
-                                    negamax.init_transposition()
-                                    # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                                    best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
-                                                                                                 depth)
-
-                            best_piece, best_move = best_combo
-                            print(best_score)
-                            end_time = time.time()
-                            total_time = end_time - start_time
-
-                            print(f"Time taken: {total_time} seconds")
-                            print(best_combo)
-                            best_piece: Roi
-                            self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
-                            chess_utils.montrer_grille(self.grille)
-
-                    # change le tour
-                    if self.tour == "blanc":
-                        self.tour = "noir"
-                    else:
-                        self.tour = "blanc"
-                    self.points_blanc, self.points_noir = chess_utils.points(self.grille)
-                    # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
-                    echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
-                    if echec_et_mat:
-                        print(
-                            f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(self.grille)} par capture du roi")
-                        self.terminee = True
-
-                    if chess_utils.roi_contre_roi(self.grille):
-                        print("Egalité ! Il ne reste que des rois sur le plateau.")
-                        self.terminee = True
-                print(i)
+                        if chess_utils.roi_contre_roi(self.grille):
+                            print("Egalité ! Il ne reste que des rois sur le plateau.")
+                            self.terminee = True
+                if self.mode == "semi-auto":
+                    chess_interface.start_semiauto(self, "noir")
+                if self.mode == "manuel":
+                    chess_interface.start_manuel(self)
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 
+def test(d=5, loop_amount=5):
+    p = Partie()
+    p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+    import cProfile
+    import pstats
+    outcomes = []
+    for i in range(loop_amount):
+
+        negamax.init_transposition()
+
+        if p.tour == "blanc":
+            couleur = 1
+        else:
+            couleur = -1
+
+        with cProfile.Profile() as pr:
+            best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, d)
+
+        best_piece, best_move = best_combo
+        print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
+
+        stats = pstats.Stats(pr)
+        stats.sort_stats(pstats.SortKey.TIME)
+        stats.print_stats()
+        outcomes.append(stats.total_tt)
+    print()
+    print(outcomes)
+    print(sum(outcomes) / len(outcomes))
 
 # Partie exemple
 p = Partie()
 p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 
-# import cProfile
-# import pstats
-#
-# negamax.init_transposition()
-#
-# if p.tour == "blanc":
-#     couleur = 1
-# else:
-#     couleur = -1
-#
-# with cProfile.Profile() as pr:
-#     best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, 5)
-#
-# best_piece, best_move = best_combo
-# print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
-#
-# stats = pstats.Stats(pr)
-# stats.sort_stats(pstats.SortKey.TIME)
-# stats.print_stats()
+
+
+
 
 # "auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
-p.mode = "auto"
+p.mode = "semi-auto"
 
-# On a le choix, soit on peut lancer la partie en textuel, qui à l'avantage d'avoir du bot contre bot en + du manuel et du semi-auto
-p.depth = 5
-p.temps_de_reflexion = 10
+p.depth = 4
+p.temps_de_reflexion = 30
 # chess_utils.montrer_grille(p.grille)
-# p.run()
+#p.run()
 
-
-# Soit on peut lancer le jeux avec l'interface graphique, en manuel
-# chess_interface.start_manuel(p)
-
-# Soit on peut le lancer, en semi-auto donc contre le bot
-chess_interface.start_semiauto(p, "blanc")

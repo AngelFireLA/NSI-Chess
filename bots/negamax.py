@@ -306,51 +306,42 @@ def zobrist_hash(board, depth):
 
     return hash_value
 
-def get_transposition_entry(hash_value, color, depth):
+def get_transposition_entry(hash_value, depth):
     if hash_value in transposition_table:
-        entry:dict = transposition_table[hash_value].get(color)
+        entry:dict = transposition_table[hash_value]
         if entry and entry.get('depth', 0) >= depth:
             return entry.get('score')
     return None
 
-def store_transposition(hash_value, color, score, depth):
+def store_transposition(hash_value, score, depth):
     if hash_value not in transposition_table:
         transposition_table[hash_value] = {}
-    transposition_table[hash_value][color] = {'score': score, 'depth': depth}
+    transposition_table[hash_value] = {'score': score, 'depth': depth}
 
 
 
 #Fonction qui ordonne les mouvements selon leur probabilité d'être bon puisque si l'algorithme regarde d'abord les coups bons, il s'arrêtera plus vite.
-def move_ordering(piece_moves, board, couleur):
+def move_ordering(piece_moves, board, couleur, is_initial_depth:bool=False):
     #captures de roi (donc echec et mat)
     captures = []
-    quiet_moves = set()
-    capture_moves = set(chess_utils.possible_captures_ou_promotions(couleur, board))
-    for piece, move in piece_moves:
-        if (piece, move) in capture_moves:
+    capture_moves = chess_utils.possible_captures(couleur, board)
+    for i in range(len(capture_moves)):
+        score = capture_moves[i][0][0].valeur - capture_moves[i][1].valeur
+        captures.append((capture_moves[i][0][0], capture_moves[i][0][1], score))
 
-            target_square = (piece.x + move[0], piece.y + move[1])
-            target_piece = board[target_square[1]][target_square[0]]
-            captured_piece_value = target_piece.valeur if target_piece else 0
-            attacking_piece_value = piece.valeur
-
-            # Utilise MVV/LVA (Most Valuable Victim/Least Valuable Attacker) pour trouver les échanges les plus profitables
-            score = captured_piece_value - attacking_piece_value
-
-            captures.append((piece, move, score))
-        else:
-            quiet_moves.add((piece, move))
-
-    #On trie les échanges par rapport à leur score.
     captures.sort(key=lambda x: x[2], reverse=True)
 
     captures = [(piece, move) for piece, move, _ in captures]
 
     # Trie les "quiet_moves" en fonction des valeurs d'historique de mouvement dans l'ordre décroissant.
     #quiet_moves = sorted(quiet_moves, key=lambda x: move_history[x[1][1]][x[1][0]], reverse=True)
+    piece_moves = [movement for movement in piece_moves if movement not in captures]
 
     # Ajoute le mouvement de variation principale au début de la liste des mouvements s'il existe.
-    ordered_moves = list(captures) + list(quiet_moves)
+    if is_initial_depth:
+        ordered_moves = best_moves_from_inferior_depth + captures + piece_moves
+    else:
+        ordered_moves = captures + piece_moves
     return ordered_moves
 
 
@@ -363,13 +354,19 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
         couleur = "blanc"
     else:
         couleur = "noir"
-
+    if chess_utils.roi_contre_roi(board):
+        return 0
     #Récupère si possible le score de la table de transposition
     hash_value = zobrist_hash(board, depth)
 
+    checkmate = chess_utils.check_si_roi_restant(board)
+
     #Si la partie est fini ou si la recherche a atteint son maximum
-    if depth == 0 or chess_utils.check_si_roi_restant(board):
-        cached_score = get_transposition_entry(hash_value, color, depth)
+    if depth == 0 or checkmate:
+        if checkmate == chess_utils.couleur_oppose(couleur):
+
+            return -30000+(initial_depth-depth)*10
+        cached_score = get_transposition_entry(hash_value, depth)
         if cached_score:
             evalu = cached_score
         else:
@@ -380,9 +377,14 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
     best_value = -BIG_VALUE
     #trie les mouvements
     all_moves = chess_utils.liste_coups_legaux(couleur, board)
-    ordered_moves = move_ordering(all_moves, board, couleur)
+    is_root = False
+    if initial_depth == depth:
+        is_root = True
+    ordered_moves = move_ordering(all_moves, board, couleur, is_root)
     #Boucle principale qui itère sur les coups
     for piece, move in ordered_moves:
+        if time.time() - start_time > time_limit_global:
+            break
         #On duplique les pièces et le plateau pour ne pas les modifier eux directement
         new_board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
 
@@ -397,7 +399,7 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
 
         if value > best_value:
             best_value = value
-            if depth == initial_depth:
+            if is_root:
                 best_move_global = (piece, move)
 
         alpha = max(alpha, value)
@@ -405,7 +407,7 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
         if alpha >= beta:
             break
 
-    store_transposition(hash_value, color, best_value, depth)
+    store_transposition(hash_value, best_value, depth)
     return best_value
 
 
@@ -413,17 +415,37 @@ start_time = None
 time_limit_global = None
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
-def iterative_deepening_negamax(board, couleur, final_depth, time_limit=120):
+def iterative_deepening_negamax(board, couleur, final_depth, time_limit=None):
 
-    global  start_time, time_limit_global, best_move_global
+    global  start_time, time_limit_global, best_move_global, best_moves_from_inferior_depth
+    if not time_limit:
+        time_limit_global = 10000
+        start_time = time.time()
+        print("depth : ", final_depth)
+        # best_score = negamax(board, final_depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=final_depth)
+        best_moves_from_inferior_depth = []
+        for i in range(1, final_depth + 1):
+            best_move_global = None
+            best_score = negamax(board, i, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=i)
+            best_moves_from_inferior_depth.insert(0, best_move_global)
+    else:
+        time_limit_global = time_limit
+        start_time = time.time()
+        print("depth : Unlimited")
+        # best_score = negamax(board, final_depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=final_depth)
+        best_moves_from_inferior_depth = []
+        for i in range(1, 100):
+            best_move_global = None
+            best_score = negamax(board, i, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=i)
+            best_moves_from_inferior_depth.insert(0, best_move_global)
+            print("Achieved depth : ", i)
+            if time.time() - start_time > time_limit_global:
+                print("Time limit reached", time.time() - start_time)
+                break
+            if time.time() - start_time > time_limit_global-1 and i >4:
+                print("Time limit reached", time.time() - start_time)
+                break
 
-    time_limit_global = time_limit
-    start_time = time.time()
-    print("depth : ", final_depth)
-    best_score = negamax(board, final_depth, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=final_depth)
-
-    # for i in range(1,  final_depth):
-    #     best_score = negamax(board, i, color=couleur, alpha=-float("inf"), beta=float("inf"), initial_depth=i)
 
     return best_score, best_move_global
 

@@ -1,46 +1,21 @@
-
-#Récupère la pièece, ou si la case vide, à une case donnée d'une grille donnée
-def get_piece(grille: list, x:int, y:int):
-    """
-    @type piece: lysandre.pieces.piece.Piece
-    """
-    if grille[y][x]:
-        piece = grille[y][x]
-        return piece
-    else:
-        return None
-
-#Pareille mais retourne le type de la pièce à la place s'il y en a une
-def get_piece_type(grille: list, x:int, y:int):
-    """
-    @type piece: lysandre.pieces.piece.Piece
-    """
-    if grille[y][x]:
-        return grille[y][x].type_de_piece
-    else:
-        return None
+COULEUR_STR_MAPPING = {1: "blanc", -1: "noir"}
+COULEUR_INT_MAPPING = {"blanc": 1, "noir": -1}
 
 def get_couleur_str(couleur: int) -> str:
-    return {1: "blanc", -1: "noir"}.get(couleur)
+    return COULEUR_STR_MAPPING.get(couleur)
 
 def get_couleur_int(couleur: str) -> int:
-    return {"blanc": 1, "noir": -1}.get(couleur)
+    return COULEUR_INT_MAPPING.get(couleur)
 
 #Récupérer la liste de pièces bougeables pour un camp dans une position
 def liste_pieces_bougeables(grille, couleur: str) -> list:
-    return [
-        j for i in grille for j in i if j and j.couleur == couleur
-    ]
+    return [ j for i in grille for j in i if j and j.couleur == couleur]
 
 def liste_pieces_restantes(grille) -> list:
-    return [
-        j for i in grille for j in i if j
-    ]
+    return [ j for i in grille for j in i if j ]
 
 def nb_pieces_restantes(grille) -> int:
-    return len([
-        j for i in grille for j in i if j
-    ])
+    return len([ j for i in grille for j in i if j ])
 
 #Récupère toutes les pièces autour d'une piéce donnée dans un rayon donné
 def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
@@ -50,30 +25,26 @@ def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
     fin_colonne = min(x + rayon + 1, len(grille[0]))
 
     sub_grille = [grille[i][debut_colonne:fin_colonne] for i in range(debut_ligne, fin_ligne)]
-    liste = [
-        j for i in sub_grille for j in i
-    ]
+    liste = [ j for i in sub_grille for j in i]
     liste = [elem for elem in liste if elem and not (elem.x, elem.y) == (x, y)]
     return liste
 
 #Récupère toutes les pièces et récupèrent chacun tous les coups possibles
 def liste_coups_legaux(couleur, grille):
     pieces = liste_pieces_bougeables(grille, couleur)
-    return [
-            (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille)
-        ]
+    return [ (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille) ]
 
-#Fonction qui détermine si un camp n'a plus de roi
+# Use set intersection for faster check
 def check_si_roi_restant(grille):
-    is_king = {"blanc": False, "noir": False}
+    colors_with_king = set()
     for row in grille:
         for piece in row:
             if piece and piece.type_de_piece == "roi":
-                is_king[piece.couleur] = True
+                colors_with_king.add(piece.couleur)
 
-    if not is_king["blanc"]:
+    if "blanc" not in colors_with_king:
         return "noir"
-    elif not is_king["noir"]:
+    elif "noir" not in colors_with_king:
         return "blanc"
 
     return False
@@ -105,13 +76,15 @@ def roi_contre_roi(grille) -> bool:
         return True
 
 
+
+
 def insufficient_material(type_de_pieces_restantes):
     blanc = type_de_pieces_restantes["blanc"]
     noir = type_de_pieces_restantes["noir"]
 
     # Check if there are any pawns, queens, or rooks on the board
     for color in [blanc, noir]:
-        if color["pion"] > 0 or color["dame"] > 0 or color["tour"] > 0:
+        if color["pion"] +color["dame"] + color["tour"] > 0:
             return False
 
     # Check for lone king
@@ -162,13 +135,13 @@ def points_avec_roi(grille):
     return pointss['blanc'], pointss['noir']
 
 #Récupère toutes les captures ou promotions possibles pour un camp dans une position donnée
-def possible_captures_ou_promotions(couleur: str, grille):
+def possible_captures(couleur: str, grille):
     all_legal_moves = liste_coups_legaux(couleur, grille)
     captures = []
     for (piece, move) in all_legal_moves:
         j = grille[piece.y + move[1]][piece.x + move[0]]
         if j and j.couleur != piece.couleur:
-            captures.append((piece, move))
+            captures.append(((piece, move), j))
     return captures
 
 

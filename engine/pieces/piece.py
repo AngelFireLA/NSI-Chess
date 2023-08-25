@@ -1,5 +1,3 @@
-import chess_utils
-
 
 # classe de base qui sera héritée par toute les pièces
 class Piece:
@@ -42,11 +40,11 @@ class Roi(Piece):
             # petit roc
             if move == (2, 0):
                 if self.x + 3 <= 7 and not self.moved:
-                    if chess_utils.get_piece(grille, self.x + 3, self.y):
+                    if grille[self.y][self.x + 3]:
                         # Récupère la tour et si elle y est, la déplace où elle devrait
-                        piece = chess_utils.get_piece(grille, self.x + 3, self.y)
+                        piece = grille[self.y][self.x + 3]
                         if piece.type_de_piece == "tour" and piece.couleur == self.couleur and not piece.moved:
-                            if not chess_utils.get_piece(grille, self.x + 2, self.y) and not chess_utils.get_piece(grille, self.x + 1, self.y):
+                            if not grille[self.y][self.x + 2] and not grille[self.y][self.x + 1]:
                                 move_legaux.append(move)
 
                             else:
@@ -61,10 +59,10 @@ class Roi(Piece):
             elif move == (-2, 0):
                 if self.x - 4 >= 0 and not self.moved:
                     # même commentaires que pour l'autre roc
-                    if chess_utils.get_piece(grille, self.x - 4, self.y):
-                        piece: Piece = chess_utils.get_piece(grille, self.x - 4, self.y)
+                    if grille[self.y][self.x - 4]:
+                        piece: Piece = grille[self.y][self.x - 4]
                         if piece.type_de_piece == "tour" and piece.couleur == self.couleur and not piece.moved:
-                            if not chess_utils.get_piece(grille, self.x - 3, self.y) and not chess_utils.get_piece(grille, self.x - 2, self.y) and not chess_utils.get_piece(grille, self.x - 1, self.y):
+                            if not grille[self.y][self.x - 3] and not grille[self.y][self.x - 2] and not grille[self.y][self.x - 1]:
                                 move_legaux.append(move)
                             else:
                                 continue
@@ -150,7 +148,7 @@ class Pion(Piece):
             if not grille[self.y - 1][self.x]:
                 patterne.append((0, -1))
             #si le pion est sur la bonne ligne et pas de pièces devant, lui laisse avancé de 2 cases
-            if self.y == 6 and not chess_utils.get_piece(grille, self.x, 4) and not chess_utils.get_piece(grille, self.x, 5):
+            if self.y == 6 and not grille[4][self.x] and not grille[5][self.x]:
                 patterne.append((0, -2))
             return patterne
         else:
@@ -158,7 +156,7 @@ class Pion(Piece):
             patterne = []
             if not grille[self.y + 1][self.x]:
                 patterne.append((0, +1))
-            if self.y == 1 and not chess_utils.get_piece(grille, self.x, 3) and not chess_utils.get_piece(grille, self.x, 2):
+            if self.y == 1 and not grille[3][self.x] and not grille[2][self.x]:
                 patterne.append((0, +2))
             return patterne
 
@@ -271,6 +269,7 @@ class Cavalier(Piece):
             grille[self.y][self.x] = self
             return grille
         else:
+
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
     def capture(self, piece_capturee: Piece):
@@ -302,10 +301,10 @@ class Tour(Piece):
             y = move[1]
             # Fait bouger la tour jusqu'à ce qu'elle atteigne une case non vide
             while True:
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if not chess_utils.get_piece(grille, self.x + x, self.y + y).couleur == self.couleur:
+                    if not grille[self.y+y][self.x+x].couleur == self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -378,10 +377,10 @@ class Dame(Piece):
             while True:
                 if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
                     break
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if grille[self.y+y][self.x+x].couleur != self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -406,10 +405,10 @@ class Dame(Piece):
                 break
             # make rook move in direction until it goes on a square that isn't None
             while True:
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if grille[self.y+y][self.x+x].couleur != self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -472,10 +471,10 @@ class Fou(Piece):
             x = move[0]
             y = move[1]
             while True:
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if grille[self.y+y][self.x+x].couleur != self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:

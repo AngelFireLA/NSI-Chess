@@ -50,7 +50,7 @@ def get_best_move_from_opening_book(grille, couleur):
     with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
         entries = list(reader.find_all(board))
         entries = [entry for entry in entries if entry.move != chess.Move.from_uci("c7c5")]
-        print(entries)
+
         if entries:
             total_weight = sum(entry.weight for entry in entries)
             random_weight = random.randint(1, total_weight)
