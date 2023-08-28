@@ -1,5 +1,5 @@
 import time
-import bots.negamax as negamax
+
 import chess_interface
 import chess_utils
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
@@ -8,19 +8,17 @@ import time
 
 
 class Partie:
-    def __init__(self, type_de_partie: str = "normale", tour="blanc", points_blanc=0, points_noir=1, mode="manuel"):
+    def __init__(self, type_de_partie: str = "normale", tour="blanc", mode="manuel"):
         # setup pour voir si le plateau a été défini
         self.setup = False
-        self.points_blanc = points_blanc
-        self.points_noir = points_noir
         self.terminee = False
         # tour dans "a qui le tour" et pas la pièce
         self.tour = tour
         self.type_de_partie = type_de_partie
         self.grille = None
         self.mode = mode
-        self.depth = 6
-        self.second_depth = 6
+        self.depth = 4
+        self.second_depth = 4
         self.temps_de_reflexion = None
         self.compteur_de_tour = 0
         self.pgn = """[Event "Game"]
@@ -67,8 +65,10 @@ class Partie:
         return symbol_piece_dict[symbol]
 
     # Boucle qui gère le début jusqu'à la fin d'une partie
-    def run(self):
+    def run(self, couleur="blanc"):
+
         if self.setup:
+            import bots.negamax as negamax
             if self.type_de_partie == "normale":
                 chess_utils.montrer_grille(self.grille)
                 # Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
@@ -104,13 +104,12 @@ class Partie:
 
                                     # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
                                     best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
-                                                                                                 depth)
+                                                                                                 depth, partie_original=self)
 
                             # utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
                             else:
-                                negamax.init_transposition()
                                 best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
-                                                                                             depth)
+                                                                                             depth, partie_original=self)
                         # Récupère meilleur pièce, coup et score
                         best_piece, best_move = best_combo
                         print(best_score)
@@ -130,7 +129,6 @@ class Partie:
                             self.tour = "noir"
                         else:
                             self.tour = "blanc"
-                        self.points_blanc, self.points_noir = chess_utils.points(self.grille)
                         self.compteur_de_tour+=1
                         # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
                         echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
@@ -143,7 +141,7 @@ class Partie:
                             print("Egalité ! Il ne reste que des rois sur le plateau.")
                             self.terminee = True
                 if self.mode == "semi-auto":
-                    chess_interface.start_semiauto(self, "noir")
+                    chess_interface.start_semiauto(self, couleur)
                 if self.mode == "manuel":
                     chess_interface.start_manuel(self)
         else:
@@ -155,8 +153,9 @@ def test(d=5, loop_amount=5):
     import cProfile
     import pstats
     outcomes = []
+    import bots.negamax as negamax
     for i in range(loop_amount):
-
+        print(f"Loop {i+1}/{loop_amount}")
         negamax.init_transposition()
 
         if p.tour == "blanc":
@@ -165,7 +164,7 @@ def test(d=5, loop_amount=5):
             couleur = -1
 
         with cProfile.Profile() as pr:
-            best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, d)
+            best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, d, partie_original=p)
 
         best_piece, best_move = best_combo
         print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
@@ -188,9 +187,10 @@ p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 
 # "auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
 p.mode = "semi-auto"
-
 p.depth = 4
-p.temps_de_reflexion = 30
-# chess_utils.montrer_grille(p.grille)
-#p.run()
+#p.temps_de_reflexion = 30
+
+#test(d=6, loop_amount=3)
+
+p.run(couleur="blanc")
 

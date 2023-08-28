@@ -60,8 +60,9 @@ def get_bot_move(grid, tour, depth, partie):
   else:
     couleur = -1
   start_time = time.time()
-  opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
+  #opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
 
+  opening = None
   if opening:
     piece, move = opening
     best_score, best_combo = 69, (grid[piece[1]][piece[0]], move)
@@ -75,15 +76,15 @@ def get_bot_move(grid, tour, depth, partie):
         piece, move = meilleur_coup
         best_score, best_combo = 69, (grid[piece[1]][piece[0]], move)
       else:
-        negamax.init_transposition()
+
         # best_score, best_combo = negamax.negascout(grid, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
         best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur,
-                                                                     depth, partie.temps_de_reflexion)
+                                                                     depth, partie.temps_de_reflexion, partie_original=partie)
 
     else:
-      negamax.init_transposition()
+
       # best_score, best_combo = negamax.negascout(grid, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-      best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur, depth, partie.temps_de_reflexion)
+      best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur, depth, partie.temps_de_reflexion, partie_original=partie)
   if not best_combo:
     return None
   best_piece, best_move = best_combo
@@ -95,9 +96,8 @@ def get_bot_move(grid, tour, depth, partie):
 
   print(best_combo)
   best_piece: Roi
-  chess_utils.montrer_grille(grid)
+  #chess_utils.montrer_grille(grid)
   grid = best_piece.move(best_move[0], best_move[1], grid)
-  partie.compteur_de_tour+=1
 
   surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
   coords = grille[best_piece.y][best_piece.x]
@@ -268,7 +268,7 @@ def start_semiauto(partie, start_tour:str):
   selected_bot = None
   partie_finie = False
   tour_num = 0
-
+  negamax.init_transposition()
   while not partie.terminee:
     selected_squares.clear()
     pieces = []

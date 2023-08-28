@@ -117,8 +117,7 @@ class Roi(Piece):
             #coups qui ne sont pas le roc
             else:
                 #Si une pièce est trouvée sur la nouvelle case, la capturée car grâce à liste_coups_legaux, une pièce trouvée ne peut que être de couleur opposée
-                if grille[self.y + y_added][self.x + x_added]:
-                    self.capture(grille[self.y + y_added][self.x + x_added])
+
                 #voir commentaires des rocs
                 grille[self.y][self.x] = None
                 self.x += x_added
@@ -128,11 +127,6 @@ class Roi(Piece):
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
-
-        # met la pièce capturée en (-1, -1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Pion(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -195,8 +189,7 @@ class Pion(Piece):
         if (x_added, y_added) in self.liste_coups_legaux(grille):
             #Code mouvement basique
             self.moved = True
-            if grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -212,11 +205,6 @@ class Pion(Piece):
             print(endgame_and_opening_move_finder.board_to_fen(grille, self.couleur))
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
-        #Code basique de capture
-
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 
     #Fonction gérant la promotion du pion
@@ -262,7 +250,6 @@ class Cavalier(Piece):
             if grille[self.y + y_added][self.x + x_added]:
                 if grille[self.y + y_added][self.x + x_added].couleur == self.couleur:
                     raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la piéce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-                self.capture(grille[self.y + y_added][self.x + x_added])
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -272,10 +259,7 @@ class Cavalier(Piece):
 
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
 
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Tour(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -330,8 +314,7 @@ class Tour(Piece):
         #forced permet de forcer le mouvement de la tour car ce n'est utilisé que pour le roc, et le roc lui même vérifie les condtions nécessaires pour le mouvement
         if (x_added, y_added) in self.liste_coups_legaux(grille) or forced:
             self.moved = True
-            if not forced and grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -340,11 +323,7 @@ class Tour(Piece):
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
 
-        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Dame(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -432,8 +411,7 @@ class Dame(Piece):
     def move(self, x_added, y_added, grille: list):
         if (x_added, y_added) in self.liste_coups_legaux(grille):
             self.moved = True
-            if grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -442,11 +420,7 @@ class Dame(Piece):
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
 
-        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Fou(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -497,8 +471,7 @@ class Fou(Piece):
     def move(self, x_added, y_added, grille: list):
         if (x_added, y_added) in self.liste_coups_legaux(grille):
             self.moved = True
-            if grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -508,10 +481,6 @@ class Fou(Piece):
 
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
 
-        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 
