@@ -60,9 +60,8 @@ def get_bot_move(grid, tour, depth, partie):
   else:
     couleur = -1
   start_time = time.time()
-  #opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
+  opening = endgame_and_opening_move_finder.get_best_move_from_opening_book(grid, tour)
 
-  opening = None
   if opening:
     piece, move = opening
     best_score, best_combo = 69, (grid[piece[1]][piece[0]], move)
