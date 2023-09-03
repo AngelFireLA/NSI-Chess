@@ -3,6 +3,8 @@ from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Gok
 import time
 import requests
 import json
+import os
+parent_directory = os.path.dirname(os.getcwd())+"/engine/"
 
 #Utilise l'api de lichess pour récupérer le meilleur coup de fin de partie
 #Api obligatoire car pour 7 pièces restantes, c'est plus d'un terraoctet de stockage
@@ -10,17 +12,20 @@ def get_best_endgame_move_from_tablebase(board, couleur, variant="standard"):
     url = f"http://tablebase.lichess.ovh/{variant}"
     fen = board_to_fen(board, couleur)
     params = {"fen": fen}
-
+    i = 0
     while True:
         response = requests.get(url, params=params)
-        print(response.text)
+
         if response.status_code == 200:  # Successful response
             break
         elif response.status_code == 429:  # Too Many Requests
             print("Trop de requêtes par le bot, attendre 60 secondes.")
             time.sleep(60)  # Wait for 60 seconds
+            i+=1
         else:
             print("Error:", response.status_code)
+            return None
+        if i == 3:
             return None
 
     try:
@@ -44,13 +49,71 @@ import chess.polyglot
 def get_best_move_from_opening_book(grille, couleur):
     return None
     board = chess.Board(fen = board_to_fen(grille, couleur, status="ouverture"))
-    with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
-        try:
-            entry = reader.find(board)
-            best_move = entry.move
-            return convert_move(best_move)
-        except IndexError:
-            return None
+    import random
+    with chess.polyglot.open_reader(parent_directory+"opening_book/codekiddy.bin") as reader:
+        entries = list(reader.find_all(board))
+        entries = [entry for entry in entries if entry.move != chess.Move.from_uci("c7c5")]
+
+        if entries:
+            total_weight = sum(entry.weight for entry in entries)
+            random_weight = random.randint(1, total_weight)
+            cumulative_weight = 0
+            for entry in entries:
+                cumulative_weight += entry.weight
+                if cumulative_weight >= random_weight:
+                    best_move = entry.move
+                    break
+            else:
+                # If no move was selected (shouldn't happen unless all weights are 0),
+                # you can handle it here, such as selecting a default move.
+                with chess.polyglot.open_reader(parent_directory+"opening_book/book.bin") as reader1:
+                    entries = list(reader1.find_all(board))
+                    entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
+
+                    if entries:
+                        total_weight = sum(entry.weight for entry in entries)
+                        random_weight = random.randint(1, total_weight)
+                        cumulative_weight = 0
+                        for entry in entries:
+                            cumulative_weight += entry.weight
+                            if cumulative_weight >= random_weight:
+                                best_move = entry.move
+                                break
+                        else:
+                            # If no move was selected (shouldn't happen unless all weights are 0),
+                            # you can handle it here, such as selecting a default move.
+                            return None
+                    else:
+                        # If no opening moves are available, you can handle it here,
+                        # such as selecting a default move.
+                        return None
+        else:
+            # If no opening moves are available, you can handle it here,
+            # such as selecting a default move.
+            with chess.polyglot.open_reader(parent_directory+"opening_book/book.bin") as reader2:
+                entries = list(reader2.find_all(board))
+                entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
+
+                if entries:
+                    total_weight = sum(entry.weight for entry in entries)
+                    random_weight = random.randint(1, total_weight)
+                    cumulative_weight = 0
+                    for entry in entries:
+                        cumulative_weight += entry.weight
+                        if cumulative_weight >= random_weight:
+                            best_move = entry.move
+                            break
+                    else:
+                        # If no move was selected (shouldn't happen unless all weights are 0),
+                        # you can handle it here, such as selecting a default move.
+                        return None
+                else:
+                    # If no opening moves are available, you can handle it here,
+                    # such as selecting a default move.
+                    return None
+    print(f"best move is {best_move}")
+    return convert_move(best_move)
+
 
 #Transforme la liste plateau en string FEN pour les fonctions le nécessitant
 def board_to_fen(board, couleur, status="endgame"):
@@ -70,7 +133,6 @@ def board_to_fen(board, couleur, status="endgame"):
             fen += str(empty_count)
         fen += '/'
     fen = fen[:-1]  # Remove the trailing '/'
-    roc = None
     if status == "ouverture":
         roc =  " KQkq - 0 1"
     else:
@@ -104,6 +166,26 @@ def convert_move(chess_move):
     dest_coords = (dest_coords[1]-source_coords[0], 7-dest_coords[0]-source_coords[1])
 
     return source_coords, dest_coords
+
+def convert_custom_move(piece_class_move):
+    piece_class, coords_change = piece_class_move
+    x_change, y_change = coords_change
+
+    original_pos = (piece_class.x,  piece_class.y)  # assuming you store the current position in 'position'
+
+    # Create original and destination squares in tuple (x_change, y_change)
+    orig_square_tuple = (original_pos[0], original_pos[1])
+    dest_square_tuple = (x_change, y_change)
+
+    print(orig_square_tuple, coords_change)
+
+    # Consider that the chess board coordinates start from the bottom left as (0,0) while python 2D array starts from top left.
+    orig_square_chess_notation = chr(ord('a') + orig_square_tuple[0]) + str(8 - orig_square_tuple[1])
+    dest_square_chess_notation = chr(ord('a') + dest_square_tuple[0]) + str(8 - dest_square_tuple[1])
+
+    chess_move = (orig_square_chess_notation, dest_square_chess_notation)
+    return chess_move
+
 
 
 

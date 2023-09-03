@@ -1,56 +1,21 @@
+COULEUR_STR_MAPPING = {1: "blanc", -1: "noir"}
+COULEUR_INT_MAPPING = {"blanc": 1, "noir": -1}
 
-#Récupère la pièece, ou si la case vide, à une case donnée d'une grille donnée
-def get_piece(grille: list, x:int, y:int):
-    """
-    @type piece: lysandre.pieces.piece.Piece
-    """
-    if grille[y][x]:
-        piece = grille[y][x]
-        return piece
-    else:
-        return None
+def get_couleur_str(couleur: int) -> str:
+    return COULEUR_STR_MAPPING.get(couleur)
 
-#Pareille mais retourne le type de la pièce à la place s'il y en a une
-def get_piece_type(grille: list, x:int, y:int):
-    """
-    @type piece: lysandre.pieces.piece.Piece
-    """
-    if grille[y][x]:
-        return grille[y][x].type_de_piece
-    else:
-        return None
-
-def get_couleur_str(couleur:int):
-    couleur_str = None
-    if couleur == 1:
-        couleur_str = "blanc"
-    elif couleur ==-1:
-        couleur_str = "noir"
-    return couleur_str
-
-def get_couleur_int(couleur:str):
-    couleur_int = None
-    if couleur == "blanc":
-        couleur_int = 1
-    elif couleur == "noir":
-        couleur_int = -1
-    return couleur_int
+def get_couleur_int(couleur: str) -> int:
+    return COULEUR_INT_MAPPING.get(couleur)
 
 #Récupérer la liste de pièces bougeables pour un camp dans une position
 def liste_pieces_bougeables(grille, couleur: str) -> list:
-    return [
-        j for i in grille for j in i if j and j.couleur == couleur
-    ]
+    return [ j for i in grille for j in i if j and j.couleur == couleur]
 
 def liste_pieces_restantes(grille) -> list:
-    return [
-        j for i in grille for j in i if j
-    ]
+    return [ j for i in grille for j in i if j ]
 
 def nb_pieces_restantes(grille) -> int:
-    return len([
-        j for i in grille for j in i if j
-    ])
+    return len([ j for i in grille for j in i if j ])
 
 #Récupère toutes les pièces autour d'une piéce donnée dans un rayon donné
 def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
@@ -60,65 +25,103 @@ def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
     fin_colonne = min(x + rayon + 1, len(grille[0]))
 
     sub_grille = [grille[i][debut_colonne:fin_colonne] for i in range(debut_ligne, fin_ligne)]
-    liste = [
-        j for i in sub_grille for j in i
-    ]
+    liste = [ j for i in sub_grille for j in i]
     liste = [elem for elem in liste if elem and not (elem.x, elem.y) == (x, y)]
     return liste
 
 #Récupère toutes les pièces et récupèrent chacun tous les coups possibles
-def liste_coups_legaux(couleur, grille, peux_capturer_allier=False):
+def liste_coups_legaux(couleur, grille):
     pieces = liste_pieces_bougeables(grille, couleur)
-    if peux_capturer_allier:
-        coups = [
-            (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille, peut_capturer_allie=True)
-        ]
-    else:
-        coups = [
-            (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille)
-        ]
-    return coups
+    return [ (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille) ]
 
-#Fonction qui détermine si un camp n'a plus de roi
+# Use set intersection for faster check
 def check_si_roi_restant(grille):
-    compteur_de_roi = {"blanc":0, "noir":0}
-    for i in grille:
-        for j in i:
-            if j and j.type_de_piece == "roi":
-                if j.couleur == "blanc":
-                    compteur_de_roi["blanc"] += 1
-                if j.couleur == "noir":
-                    compteur_de_roi["noir"] += 1
+    colors_with_king = set()
+    for row in grille:
+        for piece in row:
+            if piece and piece.type_de_piece == "roi":
+                colors_with_king.add(piece.couleur)
 
-    if compteur_de_roi["blanc"] == 0:
+    if "blanc" not in colors_with_king:
         return "noir"
-    elif compteur_de_roi["noir"] == 0:
+    elif "noir" not in colors_with_king:
         return "blanc"
-    else:
-        return False
+
+    return False
 
 #Montre la grille visuellement plus jolie mais toujours textuelle
 def montrer_grille(grille):
+    grid = [[],[],[],[],[],[],[],[]]
     for i in grille:
         ligne = []
         for j in i:
             if j:
-                ligne.append(j.type_de_piece)
+                ligne.append(f"{j.couleur[0]}_{j.type_de_piece}")
+                grid[grille.index(i)].append(f"{j.couleur[0]}_{j.type_de_piece}")
             else:
                 ligne.append(None)
+                grid[grille.index(i)].append(None)
         print(ligne)
+    return grid
 
 #Vérifie s'il ne reste que des rois sur le plateau, donc si c'est égalité
-def roi_contre_roi(grille) -> bool:
-    pieces_restantes = []
+def egalite(grille, partie) -> bool:
+    type_de_pieces_restantes = {"blanc":{"fou": 0, "cavalier": 0, "roi": 0, "dame": 0, "pion": 0, "tour": 0}, "noir":{"fou": 0, "cavalier": 0, "roi":0, "dame": 0, "pion": 0, "tour": 0}}
     for i in grille:
         for j in i:
             if j:
-                pieces_restantes.append(j)
-    for piece in pieces_restantes:
-        if not piece.type_de_piece == "roi":
+                type_de_pieces_restantes[j.couleur][j.type_de_piece]+=1
+
+    if insufficient_material(type_de_pieces_restantes):
+        return True
+    unique_positions = list(set(partie.repetitions))
+    for position in unique_positions:
+        compte = partie.repetitions.count(position)
+        if compte > 1:
+            print("repetitions detected")
+            return True
+
+
+
+
+def insufficient_material(type_de_pieces_restantes):
+    blanc = type_de_pieces_restantes["blanc"]
+    noir = type_de_pieces_restantes["noir"]
+
+    # Check if there are any pawns, queens, or rooks on the board
+    for color in [blanc, noir]:
+        if color["pion"] +color["dame"] + color["tour"] > 0:
             return False
-    return True
+
+    # Check for lone king
+    if (blanc["roi"] == 1 and sum(blanc.values()) == 1) and (noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+
+    # Check for king and bishop, or king and knight
+    if (blanc["roi"] == 1 and blanc["fou"] == 1 and sum(blanc.values()) == 2) and (
+            noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+    if (blanc["roi"] == 1 and blanc["cavalier"] == 1 and sum(blanc.values()) == 2) and (
+            noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+
+    # swap colors and repeat checks
+    if (noir["roi"] == 1 and noir["fou"] == 1 and sum(noir.values()) == 2) and (
+            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+        return True
+    if (noir["roi"] == 1 and noir["cavalier"] == 1 and sum(noir.values()) == 2) and (
+            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+        return True
+
+    # Check for king and two knights
+    if (blanc["roi"] == 1 and blanc["cavalier"] == 2 and sum(blanc.values()) == 3) and (
+            noir["roi"] == 1 and sum(noir.values()) == 1):
+        return True
+    if (noir["roi"] == 1 and noir["cavalier"] == 2 and sum(noir.values()) == 3) and (
+            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+        return True
+
+    return False
 
 #Fonctions qui comptent les points de chaque camp sans compter les rois
 def points(grille):
@@ -128,40 +131,51 @@ def points(grille):
 
 #Fonctions qui comptent les points de chaque camp en comptant les rois
 def points_avec_roi(grille):
-    points_blanc = sum([j.valeur for i in grille for j in i if j and j.couleur == "blanc"])
-    points_noir = sum([j.valeur for i in grille for j in i if j and j.couleur == "noir"])
-    return points_blanc, points_noir
+    pointss = {'blanc': 0, 'noir': 0}
+
+    for row in grille:
+        for cell in row:
+            if cell:
+                pointss[cell.couleur] += cell.valeur
+
+    return pointss['blanc'], pointss['noir']
 
 #Récupère toutes les captures ou promotions possibles pour un camp dans une position donnée
-def possible_captures_ou_promotions(couleur:str, grille):
+def possible_captures(couleur: str, grille):
     all_legal_moves = liste_coups_legaux(couleur, grille)
-    return [
-        (piece, move) for piece, move in all_legal_moves
-        if not points_avec_roi(grille) == points_avec_roi(
-            piece.copy().move(move[0], move[1],[[piece.copy() if piece is not None else None for piece in row] for row in grille])
-        )
-    ]
+    captures = []
+    for (piece, move) in all_legal_moves:
+        j = grille[piece.y + move[1]][piece.x + move[0]]
+        if j and j.couleur != piece.couleur:
+            captures.append(((piece, move), j))
+    return captures
 
 
-#Récupérer toutes les pièces qui sont menacée d'un camp spécifique
-def liste_pieces_en_capture(grille, couleur:int):
-    couleur_str = get_couleur_str(-couleur)
-    nos_coups = liste_coups_legaux(couleur_str, grille, peux_capturer_allier=True)
-    capturable = [(piece,move) for piece, move in possible_captures_ou_promotions(couleur_str, grille)]
-    for piece, move in capturable[:]:  # Iterate over a copy of capturable list to safely remove elements
-        if piece.type_de_piece != 'pion':
-            attacked_pos = (piece.x + move[0], piece.y + move[1])
-            for ally_piece, ally_move in nos_coups:
-                if attacked_pos in (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
-                    capturable.remove((piece, move))
-                    break
-    return capturable
+
+
+# #Récupérer toutes les pièces qui sont menacée d'un camp spécifique
+# def liste_pieces_en_capture(grille, couleur:int):
+#     couleur_str = get_couleur_str(-couleur)
+#     nos_coups = liste_coups_legaux(couleur_str, grille, peux_capturer_allier=True)
+#     capturable = [(piece,move) for piece, move in possible_captures_ou_promotions(couleur_str, grille)]
+#     for piece, move in capturable[:]:  # Iterate over a copy of capturable list to safely remove elements
+#         if piece.type_de_piece != 'pion':
+#             attacked_pos = (piece.x + move[0], piece.y + move[1])
+#             for ally_piece, ally_move in nos_coups:
+#                 if attacked_pos in (ally_piece.x + ally_move[0], ally_piece.y + ally_move[1]):
+#                     capturable.remove((piece, move))
+#                     break
+#     return capturable
 
 def couleur_oppose(couleur:str):
     if  couleur == "blanc":
         return "noir"
     elif couleur == "noir":
         return "blanc"
+    elif couleur == 1:
+        return -1
+    elif couleur == -1:
+        return 1
     else:
         return None
 

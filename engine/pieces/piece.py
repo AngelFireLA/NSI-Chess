@@ -1,8 +1,6 @@
-import chess_utils
-
 
 # classe de base qui sera héritée par toute les pièces
-class Piece():
+class Piece:
     def __init__(self, couleur: str, type_de_piece: str, x: int, y: int, valeur: int):
         self.couleur = couleur
         self.x, self.y = x, y
@@ -13,7 +11,7 @@ class Piece():
 
 class Roi(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
-        super().__init__(couleur, "roi", x, y, 99999999999)
+        super().__init__(couleur, "roi", x, y, 30000)
     def copy(self):
         new_piece = Roi(self.couleur,  self.x, self.y)
         new_piece.moved = self.moved
@@ -22,16 +20,13 @@ class Roi(Piece):
     #Vérifie aussi si la pièce ne vas pas en dehors du plateau
     def get_patterne_possible(self, x, y):
         #Mouvements possibles à partir de notre pièce en fonction de notre position actuelle, première valeur est x et la seconde est y
-        patterne = [(+1, +0), (+1, +1), (+0, +1), (-1, +1), (-1, +0), (-1, -1), (+0, -1), (+1, -1)]
+        patterne = [(2, 0), (-2, 0), (+1, +0), (+1, +1), (+0, +1), (-1, +1), (-1, +0), (-1, -1), (+0, -1), (+1, -1)]
         # Vérifie si la pièce ne va pas en dehors du plateau
         for i in range(len(patterne) - 1, -1, -1):
             if x + patterne[i][0] < 0 or x + patterne[i][0] > 7 or y + patterne[i][1] < 0 or y + \
                     patterne[i][1] > 7:
                 patterne.pop(i)
         #Pour le roi, c'est les mouvements de roc s'il n'a pas encore bouger
-        if not self.moved:
-            patterne.append((2, 0))
-            patterne.append((-2, 0))
         return patterne
 
     #Pareil pour toutes les pièces :  Vérifie si chaque coup est légal en prenant en comptes les autres pièces
@@ -44,12 +39,12 @@ class Roi(Piece):
             # Le prochain if et elif sont les cas spéciaux du roc
             # petit roc
             if move == (2, 0):
-                if self.x + 3 <= 7:
-                    if chess_utils.get_piece(grille, self.x + 3, self.y):
+                if self.x + 3 <= 7 and not self.moved:
+                    if grille[self.y][self.x + 3]:
                         # Récupère la tour et si elle y est, la déplace où elle devrait
-                        piece = chess_utils.get_piece(grille, self.x + 3, self.y)
+                        piece = grille[self.y][self.x + 3]
                         if piece.type_de_piece == "tour" and piece.couleur == self.couleur and not piece.moved:
-                            if not chess_utils.get_piece(grille, self.x + 2, self.y) and not chess_utils.get_piece(grille, self.x + 1, self.y):
+                            if not grille[self.y][self.x + 2] and not grille[self.y][self.x + 1]:
                                 move_legaux.append(move)
 
                             else:
@@ -62,12 +57,12 @@ class Roi(Piece):
                     continue
             # grand roc
             elif move == (-2, 0):
-                if self.x - 4 >= 0:
+                if self.x - 4 >= 0 and not self.moved:
                     # même commentaires que pour l'autre roc
-                    if chess_utils.get_piece(grille, self.x - 4, self.y):
-                        piece: Piece = chess_utils.get_piece(grille, self.x - 4, self.y)
+                    if grille[self.y][self.x - 4]:
+                        piece: Piece = grille[self.y][self.x - 4]
                         if piece.type_de_piece == "tour" and piece.couleur == self.couleur and not piece.moved:
-                            if not chess_utils.get_piece(grille, self.x - 3, self.y) and not chess_utils.get_piece(grille, self.x - 2, self.y) and not chess_utils.get_piece(grille, self.x - 1, self.y):
+                            if not grille[self.y][self.x - 3] and not grille[self.y][self.x - 2] and not grille[self.y][self.x - 1]:
                                 move_legaux.append(move)
                             else:
                                 continue
@@ -122,8 +117,7 @@ class Roi(Piece):
             #coups qui ne sont pas le roc
             else:
                 #Si une pièce est trouvée sur la nouvelle case, la capturée car grâce à liste_coups_legaux, une pièce trouvée ne peut que être de couleur opposée
-                if grille[self.y + y_added][self.x + x_added]:
-                    self.capture(grille[self.y + y_added][self.x + x_added])
+
                 #voir commentaires des rocs
                 grille[self.y][self.x] = None
                 self.x += x_added
@@ -133,11 +127,6 @@ class Roi(Piece):
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
-
-        # met la pièce capturée en (-1, -1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Pion(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -153,7 +142,7 @@ class Pion(Piece):
             if not grille[self.y - 1][self.x]:
                 patterne.append((0, -1))
             #si le pion est sur la bonne ligne et pas de pièces devant, lui laisse avancé de 2 cases
-            if self.y == 6 and not chess_utils.get_piece(grille, self.x, 4) and not chess_utils.get_piece(grille, self.x, 5):
+            if self.y == 6 and not grille[4][self.x] and not grille[5][self.x]:
                 patterne.append((0, -2))
             return patterne
         else:
@@ -161,7 +150,7 @@ class Pion(Piece):
             patterne = []
             if not grille[self.y + 1][self.x]:
                 patterne.append((0, +1))
-            if self.y == 1 and not chess_utils.get_piece(grille, self.x, 3) and not chess_utils.get_piece(grille, self.x, 2):
+            if self.y == 1 and not grille[3][self.x] and not grille[2][self.x]:
                 patterne.append((0, +2))
             return patterne
 
@@ -200,8 +189,7 @@ class Pion(Piece):
         if (x_added, y_added) in self.liste_coups_legaux(grille):
             #Code mouvement basique
             self.moved = True
-            if grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -215,11 +203,6 @@ class Pion(Piece):
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
-        #Code basique de capture
-
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 
     #Fonction gérant la promotion du pion
@@ -233,7 +216,7 @@ class Pion(Piece):
 
 class Cavalier(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
-        super().__init__(couleur, "cavalier", x, y, 320)
+        super().__init__(couleur, "cavalier", x, y, 300)
     def copy(self):
         new_piece = Cavalier(self.couleur, self.x, self.y)
 
@@ -265,19 +248,16 @@ class Cavalier(Piece):
             if grille[self.y + y_added][self.x + x_added]:
                 if grille[self.y + y_added][self.x + x_added].couleur == self.couleur:
                     raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la piéce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-                self.capture(grille[self.y + y_added][self.x + x_added])
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
             grille[self.y][self.x] = self
             return grille
         else:
+
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
-    def capture(self, piece_capturee: Piece):
 
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Tour(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -303,10 +283,10 @@ class Tour(Piece):
             y = move[1]
             # Fait bouger la tour jusqu'à ce qu'elle atteigne une case non vide
             while True:
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if not chess_utils.get_piece(grille, self.x + x, self.y + y).couleur == self.couleur:
+                    if not grille[self.y+y][self.x+x].couleur == self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -332,8 +312,7 @@ class Tour(Piece):
         #forced permet de forcer le mouvement de la tour car ce n'est utilisé que pour le roc, et le roc lui même vérifie les condtions nécessaires pour le mouvement
         if (x_added, y_added) in self.liste_coups_legaux(grille) or forced:
             self.moved = True
-            if not forced and grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -341,13 +320,8 @@ class Tour(Piece):
             return grille
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
-    def capture(self, piece_capturee: Piece):
 
-        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Dame(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
@@ -380,10 +354,10 @@ class Dame(Piece):
             while True:
                 if x + self.x > 7 or x + self.x < 0 or y + self.y > 7 or y + self.y < 0:
                     break
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if grille[self.y+y][self.x+x].couleur != self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -408,10 +382,10 @@ class Dame(Piece):
                 break
             # make rook move in direction until it goes on a square that isn't None
             while True:
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if grille[self.y+y][self.x+x].couleur != self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -435,8 +409,7 @@ class Dame(Piece):
     def move(self, x_added, y_added, grille: list):
         if (x_added, y_added) in self.liste_coups_legaux(grille):
             self.moved = True
-            if grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -444,17 +417,12 @@ class Dame(Piece):
             return grille
         else:
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
-    def capture(self, piece_capturee: Piece):
 
-        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Fou(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
-        super().__init__(couleur, "fou", x, y, 330)
+        super().__init__(couleur, "fou", x, y, 320)
     def copy(self):
         new_piece = Fou(self.couleur,  self.x, self.y)
 
@@ -475,10 +443,10 @@ class Fou(Piece):
             x = move[0]
             y = move[1]
             while True:
-                if not chess_utils.get_piece(grille, self.x + x, self.y + y):
+                if not grille[self.y+y][self.x+x]:
                     new_patterne.append((x, y))
                 else:
-                    if chess_utils.get_piece(grille, self.x + x, self.y + y).couleur != self.couleur:
+                    if grille[self.y+y][self.x+x].couleur != self.couleur:
                         new_patterne.append((x, y))
                         break
                     elif peut_capturer_allie:
@@ -501,8 +469,7 @@ class Fou(Piece):
     def move(self, x_added, y_added, grille: list):
         if (x_added, y_added) in self.liste_coups_legaux(grille):
             self.moved = True
-            if grille[self.y + y_added][self.x + x_added]:
-                self.capture(grille[self.y + y_added][self.x + x_added])
+
             grille[self.y][self.x] = None
             self.x += x_added
             self.y += y_added
@@ -511,13 +478,8 @@ class Fou(Piece):
         else:
 
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
-            return None
 
-    def capture(self, piece_capturee: Piece):
 
-        # met la pièce capturée en (1, 1) pour dire qu'elle n'est plus dans le plateau
-        piece_capturee.x = -1
-        piece_capturee.y = -1
 
 class Goku(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
