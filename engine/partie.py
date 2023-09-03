@@ -1,9 +1,7 @@
-import time
-
-import chess_interface
+from interface import chess_game
 import chess_utils
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 import time
 
 
@@ -29,10 +27,13 @@ class Partie:
 [Black "Black"]
 [Result "*"]\n
         """
+        self.repetitions = []
 
     # Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
     # on peut le générer pour n'importe quel position
     def setup_from_fen(self, fen: str):
+        if fen == "default":
+            fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
         grille = []
         rank_strings = fen.split('/')
         for rank_index, rank_string in enumerate(rank_strings):
@@ -65,15 +66,21 @@ class Partie:
         return symbol_piece_dict[symbol]
 
     # Boucle qui gère le début jusqu'à la fin d'une partie
-    def run(self, couleur="blanc"):
+    def run(self, couleur="blanc", menu=False):
 
         if self.setup:
             import bots.negamax as negamax
             if self.type_de_partie == "normale":
-                chess_utils.montrer_grille(self.grille)
+                if menu:
+                    import interface.chess_menu as chess_menu
+                    chess_menu.start_menu(self)
+                    return
                 # Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
-                negamax.init_transposition()
+
                 if self.mode == "auto":
+                    chess_utils.montrer_grille(self.grille)
+                    negamax.init_transposition()
+                    self.repetitions.append(negamax.zobrist_hash(self.grille, self.compteur_de_tour))
                     while not self.terminee:
                         # manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
                         if self.tour == "blanc":
@@ -124,6 +131,7 @@ class Partie:
                         # Effectue le meilleur coup trouvé
                         self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
                         chess_utils.montrer_grille(self.grille)
+                        self.repetitions.append(negamax.zobrist_hash(self.grille, self.compteur_de_tour))
                         # change le tour
                         if self.tour == "blanc":
                             self.tour = "noir"
@@ -137,13 +145,13 @@ class Partie:
                                 f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(self.grille)} par capture du roi")
                             self.terminee = True
 
-                        if chess_utils.roi_contre_roi(self.grille):
+                        if chess_utils.egalite(self.grille, self):
                             print("Egalité ! Il ne reste que des rois sur le plateau.")
                             self.terminee = True
                 if self.mode == "semi-auto":
-                    chess_interface.start_semiauto(self, couleur)
+                    chess_game.start_semiauto(self, couleur)
                 if self.mode == "manuel":
-                    chess_interface.start_manuel(self)
+                    chess_game.start_manuel(self)
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 
@@ -177,20 +185,5 @@ def test(d=5, loop_amount=5):
     print(outcomes)
     print(sum(outcomes) / len(outcomes))
 
-# Partie exemple
-p = Partie()
-p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 
-
-
-
-
-# "auto" (bot vs bot), "semi-auto" (joueur vs bot) ou "manuel" (joueur vs joueur)
-p.mode = "semi-auto"
-p.depth = 4
-#p.temps_de_reflexion = 30
-
-#test(d=6, loop_amount=3)
-
-p.run(couleur="blanc")
 

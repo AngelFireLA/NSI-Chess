@@ -108,7 +108,7 @@ piece_tables = {
 
 #pip install functools
 #@cache
-def evaluate_board(grid, couleur: int):
+def evaluate_board(grid, couleur: int, partie):
 
     #Calcule l'équilibre des points
     score_blanc, score_noir = chess_utils.points_avec_roi(grid)
@@ -354,7 +354,7 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
         couleur = "blanc"
     else:
         couleur = "noir"
-    if chess_utils.roi_contre_roi(board):
+    if chess_utils.egalite(board, partie):
         return 0
     #Récupère si possible le score de la table de transposition
     hash_value = zobrist_hash(board, partie.compteur_de_tour)
@@ -372,7 +372,7 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
             evalu = cached_score
         else:
             # Call q_search instead of evaluate_board
-            evalu = q_search(alpha, beta, depth, board, color)
+            evalu = q_search(alpha, beta, depth, board, color, partie)
 
         return evalu
 
@@ -395,9 +395,11 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
         #On modifie le plateau avec le coup à tester
         new_board = new_piece.move(move[0], move[1], new_board)
         partie.compteur_de_tour+=1
+        partie.repetitions.append(zobrist_hash(partie.grille, partie.compteur_de_tour))
         #On va en récursivité pour tester les prochains coups, les conditions sont de l'optimization avec divers techniques trouvées
         score= negamax(new_board, depth - 1, -beta, -alpha, -color, initial_depth, partie=partie)
         partie.compteur_de_tour -= 1
+        partie.repetitions.pop()
         value = -score
 
         if value > best_value:
@@ -413,11 +415,10 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
     store_transposition(hash_value, best_value, partie.compteur_de_tour)
     return best_value
 
-def q_search(alpha, beta, depth, board, color):
-    if depth < 0:
-        print(depth)
+def q_search(alpha, beta, depth, board, color, partie):
 
-    stand_pat = evaluate_board(board, color)
+
+    stand_pat = evaluate_board(board, color, partie)
     if stand_pat >= beta:
         return beta
     if alpha < stand_pat:
@@ -463,7 +464,7 @@ def iterative_deepening_negamax(board, couleur, final_depth, time_limit=None, p_
     for entry in entries_to_remove:
         del transposition_table[entry]
 
-    print("removed",j," entries")
+    #print("removed",j," entries")
 
     if not time_limit:
         time_limit_global = 10000

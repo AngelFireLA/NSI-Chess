@@ -5,7 +5,10 @@ import pygame
 import time
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
 import bots.negamax as negamax
+import os
 
+# Get the parent directory (folder just before the current one)
+parent_directory = os.path.dirname(os.getcwd())+"/engine/"
 
 from engine.pieces.piece import Roi
 
@@ -97,8 +100,9 @@ def get_bot_move(grid, tour, depth, partie):
   best_piece: Roi
   #chess_utils.montrer_grille(grid)
   grid = best_piece.move(best_move[0], best_move[1], grid)
+  partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
 
-  surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
+  surface = pygame.image.load(f"{parent_directory}images/{best_piece.type_de_piece} {best_piece.couleur}.png")
   coords = grille[best_piece.y][best_piece.x]
   piece_rect = pygame.Rect(coords[0], coords[0], surface.get_width(), surface.get_height())
   from engine.endgame_and_opening_move_finder import convert_custom_move
@@ -135,15 +139,14 @@ def start_manuel(partie):
   selected_piece = None
   fenetre = pygame.display.set_mode((1000, 800))
 
-  bg = pygame.image.load("images/plateau jeu d'echec.png").convert_alpha()
+  bg = pygame.image.load(parent_directory+ "images/plateau jeu d'echec.png").convert_alpha()
   #Image qui va être superposée sur les cases sélectionnées
-  selected_square = pygame.image.load("images/selected.png")
+  selected_square = pygame.image.load(parent_directory+ "images/selected.png")
   position_bg = bg.get_rect()
   selected_squares = []
   selected = None
   partie.tour = "blanc"
   partie_finie = False
-
   while not partie.terminee:
     selected_squares.clear()
     pieces = []
@@ -180,7 +183,7 @@ def start_manuel(partie):
     #Affiche toutes les pièces à leurs coordonnées
     for piece, pos in afficher(plateau):
       if piece:
-        surface = pygame.image.load(f"images/{piece.type_de_piece} {piece.couleur}.png")
+        surface = pygame.image.load(f"{parent_directory}images/{piece.type_de_piece} {piece.couleur}.png")
         position = surface.get_rect(center=(pos[0], pos[1]))
         fenetre.blit(surface, position)
         coords = pygame.Rect(pos[0], pos[1], surface.get_width(), surface.get_height())
@@ -190,7 +193,8 @@ def start_manuel(partie):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        exit()
+        import chess_menu
+        chess_menu.start_menu()
 
       #Vérifie si une pièce est cliquée
       if check_click(pieces, event):
@@ -229,9 +233,9 @@ def start_manuel(partie):
       time.sleep(10)
 
     # s'il ne reste que des rois, ça termine la partie
-    if chess_utils.roi_contre_roi(partie.grille):
+    if chess_utils.egalite(partie.grille, partie):
       partie_finie = True
-    if chess_utils.roi_contre_roi(partie.grille) and partie_finie:
+    if chess_utils.egalite(partie.grille, partie) and partie_finie:
       print("Egalité ! Il ne reste que des rois sur le plateau.")
       bot_reflechit = afficher_text(fenetre, "Egalité ! Il ne reste que des rois sur le plateau.", fenetre.get_width(),
                                     fenetre.get_height(), 40, "Impact", center=True, couleur=(255, 255, 255))
@@ -256,8 +260,8 @@ def start_semiauto(partie, start_tour:str):
   selected_piece = None
   fenetre = pygame.display.set_mode((800, 800))
 
-  bg = pygame.image.load("images/plateau jeu d'echec.png").convert_alpha()
-  selected_square = pygame.image.load("images/selected.png")
+  bg = pygame.image.load(parent_directory+ "images/plateau jeu d'echec.png").convert_alpha()
+  selected_square = pygame.image.load(parent_directory+ "images/selected.png")
   position_bg = bg.get_rect()
   selected_squares = []
   selected = None
@@ -293,7 +297,7 @@ def start_semiauto(partie, start_tour:str):
 
     for piece, pos in afficher(plateau):
       if piece:
-        surface = pygame.image.load(f"images/{piece.type_de_piece} {piece.couleur}.png")
+        surface = pygame.image.load(f"{parent_directory}images/{piece.type_de_piece} {piece.couleur}.png")
         position = surface.get_rect(center=(pos[0], pos[1]))
         fenetre.blit(surface, position)
         coords = pygame.Rect(pos[0], pos[1], surface.get_width(), surface.get_height())
@@ -302,7 +306,8 @@ def start_semiauto(partie, start_tour:str):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        exit()
+        import chess_menu
+        chess_menu.start_menu()
 
       if event.type == pygame.MOUSEBUTTONUP:
         mouse_pos = pygame.mouse.get_pos()
@@ -318,6 +323,7 @@ def start_semiauto(partie, start_tour:str):
               partie.pgn+=f" {tour_num}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
             partie.grille = selected_piece.move(converted_coords[0] - selected_piece.x,
                                                 converted_coords[1] - selected_piece.y, partie.grille)
+            partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
             partie.compteur_de_tour+=1
             selected_piece = None
             selected = None
@@ -349,7 +355,7 @@ def start_semiauto(partie, start_tour:str):
             pygame.quit()
             exit()
 
-          if chess_utils.roi_contre_roi(partie.grille):
+          if chess_utils.egalite(partie.grille, partie):
             print("Egalité ! Il ne reste que des rois sur le plateau.")
             partie.terminee = True
             pygame.quit()
@@ -378,7 +384,7 @@ def start_semiauto(partie, start_tour:str):
       partie_finie = True
       print(partie.pgn)
 
-    if chess_utils.roi_contre_roi(partie.grille) and partie_finie.terminee:
+    if chess_utils.egalite(partie.grille, partie):
       print("Egalité ! Il ne reste que des rois sur le plateau.")
       bot_reflechit = afficher_text(fenetre, "Egalité ! Il ne reste que des rois sur le plateau.", fenetre.get_width(),
                                     fenetre.get_height(), 35, "Impact", center=True, couleur=(255, 255, 255))
@@ -387,7 +393,7 @@ def start_semiauto(partie, start_tour:str):
       partie.terminee = True
       print(partie.pgn)
       time.sleep(10)
-    if chess_utils.roi_contre_roi(partie.grille):
+    if chess_utils.egalite(partie.grille, partie):
       partie_finie = True
       print(partie.pgn)
 

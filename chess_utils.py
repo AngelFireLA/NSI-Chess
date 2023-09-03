@@ -65,7 +65,7 @@ def montrer_grille(grille):
     return grid
 
 #Vérifie s'il ne reste que des rois sur le plateau, donc si c'est égalité
-def roi_contre_roi(grille) -> bool:
+def egalite(grille, partie) -> bool:
     type_de_pieces_restantes = {"blanc":{"fou": 0, "cavalier": 0, "roi": 0, "dame": 0, "pion": 0, "tour": 0}, "noir":{"fou": 0, "cavalier": 0, "roi":0, "dame": 0, "pion": 0, "tour": 0}}
     for i in grille:
         for j in i:
@@ -74,6 +74,12 @@ def roi_contre_roi(grille) -> bool:
 
     if insufficient_material(type_de_pieces_restantes):
         return True
+    unique_positions = list(set(partie.repetitions))
+    for position in unique_positions:
+        compte = partie.repetitions.count(position)
+        if compte > 1:
+            print("repetitions detected")
+            return True
 
 
 

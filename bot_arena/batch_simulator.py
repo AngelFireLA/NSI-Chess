@@ -11,18 +11,19 @@ def simulate_match(fen):
     partie = Partie()
     partie.mode = "auto"
     partie.setup_from_fen(fen)
-    partie.temps_de_reflexion = 2
+    partie.temps_de_reflexion = None
     i = 0
     print("\n")
+    negamax.init_transposition()
     while not partie.terminee:
         i+=1
         print(i, end=" ")
         if partie.tour == "blanc":
             couleur = 1
-            depth = partie.depth
+            depth = 4
         else:
             couleur = -1
-            depth = partie.second_depth
+            depth = 5
         # Vérifie si la position est dans le livre d'ouverture, et si oui jouer le coup recommandé
         # start_time = time.time()
         # S'il y a 7 pièces au moins restantes sur le plateau, utiliser le solveur de fin de partie
@@ -35,15 +36,14 @@ def simulate_match(fen):
                 piece, move = meilleur_coup
                 best_score, best_combo = 69, (partie.grille[piece[1]][piece[0]], move)
             else:
-                negamax.init_transposition()
                 # best_score, best_combo = negamax.negascout(partie.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
                 best_score, best_combo = negamax.iterative_deepening_negamax(partie.grille, couleur,
-                                                                             depth, time_limite=partie.temps_de_reflexion)
+                                                                             depth, time_limit=partie.temps_de_reflexion, partie_original=partie)
 
         # utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
         else:
             negamax.init_transposition()
-            best_score, best_combo = negamax.iterative_deepening_negamax(partie.grille, couleur, depth, time_limite=partie.temps_de_reflexion)
+            best_score, best_combo = negamax.iterative_deepening_negamax(partie.grille, couleur, depth, time_limit=partie.temps_de_reflexion, partie_original=partie)
 
         # Récupère meilleur pièce, coup et score
         best_piece, best_move = best_combo
@@ -64,6 +64,7 @@ def simulate_match(fen):
             partie.tour = "noir"
         else:
             partie.tour = "blanc"
+        print(endgame_and_opening_move_finder.board_to_fen(partie.grille,  partie.tour))
         partie.points_blanc, partie.points_noir = chess_utils.points(partie.grille)
         # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
         echec_et_mat = chess_utils.check_si_roi_restant(partie.grille)
@@ -73,7 +74,7 @@ def simulate_match(fen):
             partie.terminee = True
             return echec_et_mat
 
-        if chess_utils.roi_contre_roi(partie.grille) or i == 100:
+        if chess_utils.egalite(partie.grille, partie) or i == 100:
             print("Egalité !")
             partie.terminee = True
             return "draw"

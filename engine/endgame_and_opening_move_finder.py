@@ -3,6 +3,8 @@ from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
 import time
 import requests
 import json
+import os
+parent_directory = os.path.dirname(os.getcwd())+"/engine/"
 
 #Utilise l'api de lichess pour récupérer le meilleur coup de fin de partie
 #Api obligatoire car pour 7 pièces restantes, c'est plus d'un terraoctet de stockage
@@ -47,7 +49,7 @@ import chess.polyglot
 def get_best_move_from_opening_book(grille, couleur):
     board = chess.Board(fen = board_to_fen(grille, couleur, status="ouverture"))
     import random
-    with chess.polyglot.open_reader("opening_book/codekiddy.bin") as reader:
+    with chess.polyglot.open_reader(parent_directory+"opening_book/codekiddy.bin") as reader:
         entries = list(reader.find_all(board))
         entries = [entry for entry in entries if entry.move != chess.Move.from_uci("c7c5")]
 
@@ -63,7 +65,7 @@ def get_best_move_from_opening_book(grille, couleur):
             else:
                 # If no move was selected (shouldn't happen unless all weights are 0),
                 # you can handle it here, such as selecting a default move.
-                with chess.polyglot.open_reader("opening_book/book.bin") as reader1:
+                with chess.polyglot.open_reader(parent_directory+"opening_book/book.bin") as reader1:
                     entries = list(reader1.find_all(board))
                     entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
 
@@ -87,7 +89,7 @@ def get_best_move_from_opening_book(grille, couleur):
         else:
             # If no opening moves are available, you can handle it here,
             # such as selecting a default move.
-            with chess.polyglot.open_reader("opening_book/book.bin") as reader2:
+            with chess.polyglot.open_reader(parent_directory+"opening_book/book.bin") as reader2:
                 entries = list(reader2.find_all(board))
                 entries = [entry for entry in entries if entry.move != chess.Move.from_uci("e7e5")]
 
