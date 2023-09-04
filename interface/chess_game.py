@@ -194,8 +194,7 @@ def start_manuel(partie):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        import chess_menu
-        chess_menu.start_menu()
+        exit()
 
       #Vérifie si une pièce est cliquée
       if check_click(pieces, event):
@@ -211,7 +210,7 @@ def start_manuel(partie):
 
             partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
             partie.compteur_de_tour+=1
-            chess_utils.montrer_grille(partie.grille)
+            #chess_utils.montrer_grille(partie.grille)
             #Reset les variables pour attendre la prochaine pièce à sélectionner
             selected_piece = None
             selected = None
@@ -307,8 +306,7 @@ def start_semiauto(partie, start_tour:str):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        import chess_menu
-        chess_menu.start_menu()
+        exit()
 
       if event.type == pygame.MOUSEBUTTONUP:
         mouse_pos = pygame.mouse.get_pos()

@@ -1,4 +1,4 @@
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur, Imposteur
 
 import time
 import requests
@@ -143,9 +143,10 @@ def board_to_fen(board, couleur, status="endgame"):
         fen += ' b'+roc  # Append the active color and other FEN fields
     return fen
 
+#CUSTOM TODO
 def symbol_from_piece(piece):
     piece_symbol_dict = {
-        Roi: 'K', Dame: 'Q', Tour: 'R', Fou: 'B', Cavalier: 'N', Pion: 'P', Goku: 'G', Vegeta: 'V', Voleur: 'T'
+        Roi: 'K', Dame: 'Q', Tour: 'R', Fou: 'B', Cavalier: 'N', Pion: 'P', Goku: 'G', Vegeta: 'V', Voleur: 'T', Imposteur: 'I',
     }
     if piece.couleur == "noir":
         return piece_symbol_dict[type(piece)].lower()

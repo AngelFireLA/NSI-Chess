@@ -143,7 +143,7 @@ zobrist = []
 transposition_table = {}
 
 #CUSTOM TODO
-piece_type_mapping = {"roi": 0, "dame": 1, "tour": 2, "fou": 3, "cavalier": 4, "pion": 5, "goku":6, "vegeta":7, "voleur":8}
+piece_type_mapping = {"roi": 0, "dame": 1, "tour": 2, "fou": 3, "cavalier": 4, "pion": 5, "goku":6, "vegeta":7, "voleur":8, "imposteur": 9}
 piece_color_mapping = {"blanc": 0, "noir": 1}
                 
 def init_transposition():

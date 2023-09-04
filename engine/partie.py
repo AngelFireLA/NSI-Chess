@@ -1,6 +1,6 @@
 from interface import chess_game
 import chess_utils
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur, Imposteur
 import bots.negamax as negamax
 
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
@@ -62,9 +62,9 @@ class Partie:
     def piece_from_symbol(self, symbol: str):
         symbol_piece_dict = {
             'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
-            'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"), 'G': (Goku, "blanc"), 'V': (Vegeta, 'blanc'), 'T': (Voleur, 'blanc'),
+            'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"), 'G': (Goku, "blanc"), 'V': (Vegeta, 'blanc'), 'T': (Voleur, 'blanc'), 'I': (Imposteur, 'blanc'),
             'k': (Roi, "noir"), 'q': (Dame, "noir"), 'r': (Tour, "noir"), 'b': (Fou, "noir"),
-            'n': (Cavalier, "noir"), 'p': (Pion, "noir"), 'g': (Goku, "noir"), 'v': (Vegeta, 'noir'), 't': (Voleur, 'noir')
+            'n': (Cavalier, "noir"), 'p': (Pion, "noir"), 'g': (Goku, "noir"), 'v': (Vegeta, 'noir'), 't': (Voleur, 'noir'), 'i': (Imposteur, 'noir'),
         }
         return symbol_piece_dict[symbol]
 

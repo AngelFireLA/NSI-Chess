@@ -66,7 +66,8 @@ def montrer_grille(grille):
 
 #Vérifie s'il ne reste que des rois sur le plateau, donc si c'est égalité
 def egalite(grille, partie) -> bool:
-    type_de_pieces_restantes = {"blanc":{"fou": 0, "cavalier": 0, "roi": 0, "dame": 0, "pion": 0, "tour": 0}, "noir":{"fou": 0, "cavalier": 0, "roi":0, "dame": 0, "pion": 0, "tour": 0}}
+    #CUSTOM TODO
+    type_de_pieces_restantes = {"blanc":{"fou": 0, "cavalier": 0, "roi": 0, "dame": 0, "pion": 0, "tour": 0, "goku": 0, "vegeta": 0, "voleur": 0, "imposteur": 0}, "noir":{"fou": 0, "cavalier": 0, "roi":0, "dame": 0, "pion": 0, "tour": 0, "goku": 0, "vegeta": 0, "voleur": 0, "imposteur": 0}}
     for i in grille:
         for j in i:
             if j:
@@ -90,7 +91,7 @@ def insufficient_material(type_de_pieces_restantes):
 
     # Check if there are any pawns, queens, or rooks on the board
     for color in [blanc, noir]:
-        if color["pion"] +color["dame"] + color["tour"] > 0:
+        if color["pion"] +color["dame"] + color["tour"] + color["goku"] + color["vegeta"] + color["voleur"] +  color["imposteur"] > 0:
             return False
 
     # Check for lone king
