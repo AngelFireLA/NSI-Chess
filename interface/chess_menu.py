@@ -2,7 +2,6 @@ def start_menu(partie):
     import pygame
     import pygame_menu
     import engine.partie
-    import os
 
     partie: engine.partie.Partie
 

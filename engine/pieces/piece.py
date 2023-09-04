@@ -18,12 +18,12 @@ class Roi(Piece):
         return new_piece
     #Pareil pour toutes les pièces : Récupère tout les mouvements possible s'il  avait 0 pièces autour de la pièce, et autres coups spéciaux
     #Vérifie aussi si la pièce ne vas pas en dehors du plateau
-    def get_patterne_possible(self, x, y):
+    def get_patterne_possible(self):
         #Mouvements possibles à partir de notre pièce en fonction de notre position actuelle, première valeur est x et la seconde est y
         patterne = [(2, 0), (-2, 0), (+1, +0), (+1, +1), (+0, +1), (-1, +1), (-1, +0), (-1, -1), (+0, -1), (+1, -1)]
         # Vérifie si la pièce ne va pas en dehors du plateau
         for i in range(len(patterne) - 1, -1, -1):
-            if x + patterne[i][0] < 0 or x + patterne[i][0] > 7 or y + patterne[i][1] < 0 or y + \
+            if self.x + patterne[i][0] < 0 or self.x + patterne[i][0] > 7 or self.y + patterne[i][1] < 0 or self.y + \
                     patterne[i][1] > 7:
                 patterne.pop(i)
         #Pour le roi, c'est les mouvements de roc s'il n'a pas encore bouger
@@ -31,7 +31,7 @@ class Roi(Piece):
 
     #Pareil pour toutes les pièces :  Vérifie si chaque coup est légal en prenant en comptes les autres pièces
     def liste_coups_legaux(self, grille: list, peut_capturer_allie=False):
-        patterne = self.get_patterne_possible(self.x, self.y)
+        patterne = self.get_patterne_possible()
         move_legaux = []
 
         # Pour chaque coup, vérifie s'il est valide

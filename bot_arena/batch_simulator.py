@@ -1,5 +1,3 @@
-import time
-
 import chess_utils
 from bots import negamax
 from engine import endgame_and_opening_move_finder

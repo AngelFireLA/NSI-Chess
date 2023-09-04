@@ -1,4 +1,4 @@
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece
+from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 
 import time
 import requests

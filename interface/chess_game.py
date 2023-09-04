@@ -1,5 +1,3 @@
-from pygame import font
-
 import chess_utils
 import pygame
 import time
@@ -54,8 +52,6 @@ tour_num = 0
 #récupère le coup du bot, similaire à la fonction run() de Partie
 def get_bot_move(grid, tour, depth, partie):
   global tour_num
-  alpha = -float('inf')
-  beta = float('inf')
 
   # call negamax to find the best move
   if tour == "blanc":
@@ -90,15 +86,12 @@ def get_bot_move(grid, tour, depth, partie):
   if not best_combo:
     return None
   best_piece, best_move = best_combo
-  print(best_score)
   end_time = time.time()
   total_time = end_time - start_time
 
-  print(f"Time taken: {total_time} seconds")
-
-  print(best_combo)
+  print(f"Bot played in {total_time} seconds thinking the current eval is {best_score}.")
+  print()
   best_piece: Roi
-  #chess_utils.montrer_grille(grid)
   grid = best_piece.move(best_move[0], best_move[1], grid)
   partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
 
@@ -193,8 +186,7 @@ def start_manuel(partie):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        import chess_menu
-        chess_menu.start_menu()
+        exit()
 
       #Vérifie si une pièce est cliquée
       if check_click(pieces, event):
@@ -210,13 +202,18 @@ def start_manuel(partie):
 
             partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
             partie.compteur_de_tour+=1
-            chess_utils.montrer_grille(partie.grille)
+            scores = chess_utils.points_avec_roi(partie.grille)
+            if scores[0] == scores[1]:
+              print(f"Tour numéro {partie.compteur_de_tour}. Le score est égal.")
+            elif scores[0] > scores[1]:
+                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage blanc +{scores[0]-scores[1]}.")
+            else:
+                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage noir +{scores[1]-scores[0]}.")
             #Reset les variables pour attendre la prochaine pièce à sélectionner
             selected_piece = None
             selected = None
             selected_squares.clear()
             partie.tour = chess_utils.couleur_oppose(partie.tour)
-            moved = True
             break
 
 
@@ -266,9 +263,7 @@ def start_semiauto(partie, start_tour:str):
   selected_squares = []
   selected = None
   partie.tour = "blanc"
-  moved = False
   bot_answer = None
-  selected_bot = None
   partie_finie = False
   tour_num = 0
   negamax.init_transposition()
@@ -306,15 +301,13 @@ def start_semiauto(partie, start_tour:str):
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        import chess_menu
-        chess_menu.start_menu()
+        exit()
 
       if event.type == pygame.MOUSEBUTTONUP:
         mouse_pos = pygame.mouse.get_pos()
         for square_rect in selected_squares:
           if square_rect.collidepoint(mouse_pos):
             # Send the message here
-            print("Selected square:", coords_from_pixel(square_rect.center[0], square_rect.center[1]))
             converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
             from engine.endgame_and_opening_move_finder import convert_custom_move
             if selected_piece.type_de_piece == "pion":
@@ -325,6 +318,13 @@ def start_semiauto(partie, start_tour:str):
                                                 converted_coords[1] - selected_piece.y, partie.grille)
             partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
             partie.compteur_de_tour+=1
+            scores = chess_utils.points_avec_roi(partie.grille)
+            if scores[0] == scores[1]:
+              print(f"Tour numéro {partie.compteur_de_tour}. Le score est égal.")
+            elif scores[0] > scores[1]:
+                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage blanc +{scores[0]-scores[1]}.")
+            else:
+                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage noir +{scores[1]-scores[0]}.")
             selected_piece = None
             selected = None
             selected_squares.clear()
@@ -335,7 +335,6 @@ def start_semiauto(partie, start_tour:str):
         selected = check_click(pieces, event)
       #Si pas de pièces sont séléctionnée et que c'est aux noirs donc au bot
       elif not selected and partie.tour == chess_utils.couleur_oppose(start_tour):
-        selected_bot = True
         #Affiche le emssage d'attente pendant que le bot choisi le coup
         fenetre_originale = fenetre.copy()
         bot_reflechit = afficher_text(fenetre, "Le bot réfléchit au meilleur coup...",
@@ -378,11 +377,11 @@ def start_semiauto(partie, start_tour:str):
       fenetre.blit(bot_reflechit[0], bot_reflechit[1])
       pygame.display.flip()
       partie.terminee = True
-      print(partie.pgn)
+      #print(partie.pgn)
       time.sleep(10)
     if chess_utils.check_si_roi_restant(partie.grille):
       partie_finie = True
-      print(partie.pgn)
+      #print(partie.pgn)
 
     if chess_utils.egalite(partie.grille, partie):
       print("Egalité ! Il ne reste que des rois sur le plateau.")
@@ -391,11 +390,11 @@ def start_semiauto(partie, start_tour:str):
       fenetre.blit(bot_reflechit[0], bot_reflechit[1])
       pygame.display.flip()
       partie.terminee = True
-      print(partie.pgn)
+      #print(partie.pgn)
       time.sleep(10)
     if chess_utils.egalite(partie.grille, partie):
       partie_finie = True
-      print(partie.pgn)
+      #print(partie.pgn)
 
 
     pygame.display.flip()

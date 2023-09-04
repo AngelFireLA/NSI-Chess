@@ -5,6 +5,16 @@ from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 import time
 
 
+def piece_from_symbol(symbol: str):
+    symbol_piece_dict = {
+        'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
+        'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"),
+        'k': (Roi, "noir"), 'q': (Dame, "noir"), 'r': (Tour, "noir"), 'b': (Fou, "noir"),
+        'n': (Cavalier, "noir"), 'p': (Pion, "noir")
+    }
+    return symbol_piece_dict[symbol]
+
+
 class Partie:
     def __init__(self, type_de_partie: str = "normale", tour="blanc", mode="manuel"):
         # setup pour voir si le plateau a été défini
@@ -47,7 +57,7 @@ class Partie:
                         ligne.append(None)
                     file_index += empty_fields
                 else:
-                    piece_class, couleur = self.piece_from_symbol(symbol)
+                    piece_class, couleur = piece_from_symbol(symbol)
                     piece = piece_class(x=file_index, y=y, couleur=couleur)
                     ligne.append(piece)
                     file_index += 1
@@ -56,14 +66,6 @@ class Partie:
         self.setup = True
 
     # Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
-    def piece_from_symbol(self, symbol: str):
-        symbol_piece_dict = {
-            'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
-            'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"),
-            'k': (Roi, "noir"), 'q': (Dame, "noir"), 'r': (Tour, "noir"), 'b': (Fou, "noir"),
-            'n': (Cavalier, "noir"), 'p': (Pion, "noir")
-        }
-        return symbol_piece_dict[symbol]
 
     # Boucle qui gère le début jusqu'à la fin d'une partie
     def run(self, couleur="blanc", menu=False):
