@@ -28,7 +28,7 @@ class Partie:
         self.depth = 4
         self.second_depth = 4
         self.temps_de_reflexion = None
-        self.compteur_de_tour = 0
+        self.compteur_de_tour = 1
         self.pgn = """[Event "Game"]
 [Site "Somewhere"]
 [Date "Sometime"]
@@ -151,9 +151,9 @@ class Partie:
                             print("Egalité ! Il ne reste que des rois sur le plateau.")
                             self.terminee = True
                 if self.mode == "semi-auto":
-                    chess_game.start_semiauto(self, couleur)
+                    chess_game.start_partie(self, couleur)
                 if self.mode == "manuel":
-                    chess_game.start_manuel(self)
+                    chess_game.start_partie(self)
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 

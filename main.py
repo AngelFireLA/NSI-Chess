@@ -1,8 +1,6 @@
 from  engine.partie import Partie
 
-# Partie exemple
-p = Partie()
-p.setup_from_fen("default")
 
+import interface.chess_menu as menu
 
-p.run(menu=True)
+menu.start_menu()

@@ -4,9 +4,7 @@ import time
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
 import bots.negamax as negamax
 import os
-
-# Get the parent directory (folder just before the current one)
-parent_directory = os.path.dirname(os.getcwd())+"/engine/"
+import interface.button as button_library
 
 from engine.pieces.piece import Roi
 
@@ -48,10 +46,8 @@ def check_click(surfaces, event):
   return None  # Return None if no surface is clicked
 
 plateau = []
-tour_num = 0
 #récupère le coup du bot, similaire à la fonction run() de Partie
 def get_bot_move(grid, tour, depth, partie):
-  global tour_num
 
   # call negamax to find the best move
   if tour == "blanc":
@@ -95,7 +91,7 @@ def get_bot_move(grid, tour, depth, partie):
   grid = best_piece.move(best_move[0], best_move[1], grid)
   partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
 
-  surface = pygame.image.load(f"{parent_directory}images/{best_piece.type_de_piece} {best_piece.couleur}.png")
+  surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
   coords = grille[best_piece.y][best_piece.x]
   piece_rect = pygame.Rect(coords[0], coords[0], surface.get_width(), surface.get_height())
   from engine.endgame_and_opening_move_finder import convert_custom_move
@@ -103,7 +99,7 @@ def get_bot_move(grid, tour, depth, partie):
     partie.pgn+=f" {convert_custom_move((best_piece, best_move))[1]}"
   else:
     partie.pgn += f" {endgame_and_opening_move_finder.symbol_from_piece(best_piece)}{convert_custom_move((best_piece, best_move))[1]}"
-  tour_num+=1
+  partie.compteur_de_tour+=1
   return (surface, piece_rect), grid
 
 #Affiche un texte selon des paramètres
@@ -120,157 +116,49 @@ def afficher_text(fenetre, texte: str, x: int, y: int, taille, font_choisi: str,
   return text_surface, (text_x, text_y)
 
 
-#Fonctions pour jouer en 1 contre 1 manuellement
-def start_manuel(partie):
-  #Juste aide pour l'autocomplétion de pycharm
-  from engine.partie import Partie
-  partie:Partie
-
-  global plateau
-  plateau = partie.grille
-  pygame.init()
-  selected_piece = None
-  fenetre = pygame.display.set_mode((1000, 800))
-
-  bg = pygame.image.load(parent_directory+ "images/plateau jeu d'echec.png").convert_alpha()
-  #Image qui va être superposée sur les cases sélectionnées
-  selected_square = pygame.image.load(parent_directory+ "images/selected.png")
-  position_bg = bg.get_rect()
-  selected_squares = []
-  selected = None
-  partie.tour = "blanc"
-  partie_finie = False
-  while not partie.terminee:
-    selected_squares.clear()
-    pieces = []
-    fenetre.fill((0, 0, 0))
-    fenetre.blit(bg, position_bg)
-
-    #Affiche à qui c'est le tour
-    texte_combo = afficher_text(fenetre, f"Tour : {partie.tour} ", 810, 50, 40, "arial", couleur=(255, 255, 255))
-    fenetre.blit(texte_combo[0], texte_combo[1])
-
-    #Si une pièce à été clickée dessus
-    if selected:
-      x, y = coords_from_pixel(selected[1].x, selected[1].y)
-      x, y = int(x), int(y)
-      #Récupère la pièce sur le plateau
-      if plateau[y][x]:
-        selected_piece: Roi = plateau[y][x]
-        #Empêche de jouer une pièce quand c'est pas notre tour
-        if selected_piece.couleur ==partie.tour:
-          for move in selected_piece.liste_coups_legaux(plateau):
-            #Récupère toutes les cases sur lesquelles on pourrait se déplacer
-            square_position = grille[selected_piece.y + move[1]][selected_piece.x + move[0]]
-            square_rect = selected_square.get_rect(center=square_position)
-            selected_squares.append(square_rect)
-      else:
-        print("Erreur, la pièce cliquée n'a pas d'équivalent sur le plateau")
-
-
-    #Si il y a des cases où se déplacer (donc une pièce séléctionner), affiché ces cases
-    if selected_squares:
-      for square_rect in selected_squares:
-        fenetre.blit(selected_square, square_rect)
-
-    #Affiche toutes les pièces à leurs coordonnées
-    for piece, pos in afficher(plateau):
-      if piece:
-        surface = pygame.image.load(f"{parent_directory}images/{piece.type_de_piece} {piece.couleur}.png")
-        position = surface.get_rect(center=(pos[0], pos[1]))
-        fenetre.blit(surface, position)
-        coords = pygame.Rect(pos[0], pos[1], surface.get_width(), surface.get_height())
-        pieces.append((surface, coords))  # Store the surface in the surfaces list
-
-
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        pygame.quit()
-        exit()
-
-      #Vérifie si une pièce est cliquée
-      if check_click(pieces, event):
-        selected = check_click(pieces, event)
-
-      if event.type == pygame.MOUSEBUTTONUP:
-        mouse_pos = pygame.mouse.get_pos()
-        for square_rect in selected_squares:
-          #Vérifie si une des cases de mouvement possibles a été cliquée et déplace la pièce dans le plateau
-          if square_rect.collidepoint(mouse_pos):
-            # Send the message here
-            converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
-
-            partie.grille = selected_piece.move(converted_coords[0]-selected_piece.x, converted_coords[1]-selected_piece.y, partie.grille)
-            partie.compteur_de_tour+=1
-            scores = chess_utils.points_avec_roi(partie.grille)
-            if scores[0] == scores[1]:
-              print(f"Tour numéro {partie.compteur_de_tour}. Le score est égal.")
-            elif scores[0] > scores[1]:
-                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage blanc +{scores[0]-scores[1]}.")
-            else:
-                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage noir +{scores[1]-scores[0]}.")
-            #Reset les variables pour attendre la prochaine pièce à sélectionner
-            selected_piece = None
-            selected = None
-            selected_squares.clear()
-            partie.tour = chess_utils.couleur_oppose(partie.tour)
-            break
-
-
-    partie.points_blanc, partie.points_noir = chess_utils.points(partie.grille)
-    # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
-    if chess_utils.check_si_roi_restant(partie.grille):
-      partie_finie = True
-    if chess_utils.check_si_roi_restant(partie.grille) and partie_finie:
-      bot_reflechit = afficher_text(fenetre, f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(partie.grille)} par capture du roi", fenetre.get_width(),
-                                    fenetre.get_height(), 36, "Impact", center=True, couleur=(255, 255, 255))
-      fenetre.blit(bot_reflechit[0], bot_reflechit[1])
-      pygame.display.flip()
-      partie.terminee = True
-      time.sleep(10)
-
-    # s'il ne reste que des rois, ça termine la partie
-    if chess_utils.egalite(partie.grille, partie):
-      partie_finie = True
-    if chess_utils.egalite(partie.grille, partie) and partie_finie:
-      print("Egalité ! Il ne reste que des rois sur le plateau.")
-      bot_reflechit = afficher_text(fenetre, "Egalité ! Il ne reste que des rois sur le plateau.", fenetre.get_width(),
-                                    fenetre.get_height(), 40, "Impact", center=True, couleur=(255, 255, 255))
-      fenetre.blit(bot_reflechit[0], bot_reflechit[1])
-      pygame.display.flip()
-      partie.terminee = True
-      time.sleep(10)
-
-    pygame.display.flip()
-
-
-#Fonction qui lance le jeu en mode joueur contre bot
-def start_semiauto(partie, start_tour:str):
+def start_partie(partie, start_tour:str="blanc"):
   global DEPTH
   DEPTH = partie.depth
   from engine.partie import Partie
   partie: Partie
   global plateau
-  global tour_num
   plateau = partie.grille
   pygame.init()
   selected_piece = None
-  fenetre = pygame.display.set_mode((800, 800))
+  fenetre = pygame.display.set_mode((1200, 800))
 
-  bg = pygame.image.load(parent_directory+ "images/plateau jeu d'echec.png").convert_alpha()
-  selected_square = pygame.image.load(parent_directory+ "images/selected.png")
+  bg = pygame.image.load("images/plateau jeu d'echec.png").convert_alpha()
+  selected_square = pygame.image.load("images/selected.png")
   position_bg = bg.get_rect()
   selected_squares = []
   selected = None
   partie.tour = "blanc"
   bot_answer = None
   partie_finie = False
-  tour_num = 0
   negamax.init_transposition()
+
+  button = pygame.image.load("images/button.png").convert_alpha()
+  pressed_button = pygame.image.load("images/button_pressed.png").convert_alpha()
+  cross_button = pygame.image.load("images/button_cross.svg").convert_alpha()
+  button_library.set_button_images(button, pressed_button, cross_button)
+
+  fen_button = button_library.Button(920, 750, 1, "Print FEN", fenetre, button, montrer=True, taille_texte=25, temps_animation=50)
+  new_game_button = button_library.Button(920, 150, 1.1, "Nouvelle Partie", fenetre, button, montrer=True, taille_texte=25, temps_animation=50)
+  save_game_button = button_library.Button(950, 650, 1.4, "Sauvegarder le plateau", fenetre, button, montrer=True, taille_texte=23, temps_animation=50)
+
+
+  # Boucle principale du jeu
   while not partie.terminee:
     selected_squares.clear()
     pieces = []
+    fenetre.fill((0, 0, 0))
     fenetre.blit(bg, position_bg)
+
+
+    #Affiche à qui c'est le tour
+    texte_combo = afficher_text(fenetre, f"Tour {partie.compteur_de_tour} : {partie.tour}", 810, 20, 50, "arial", couleur=(255, 255, 255))
+    fenetre.blit(texte_combo[0], texte_combo[1])
+
 
 
     if selected:
@@ -292,11 +180,41 @@ def start_semiauto(partie, start_tour:str):
 
     for piece, pos in afficher(plateau):
       if piece:
-        surface = pygame.image.load(f"{parent_directory}images/{piece.type_de_piece} {piece.couleur}.png")
+        surface = pygame.image.load(f"images/{piece.type_de_piece} {piece.couleur}.png")
         position = surface.get_rect(center=(pos[0], pos[1]))
         fenetre.blit(surface, position)
         coords = pygame.Rect(pos[0], pos[1], surface.get_width(), surface.get_height())
         pieces.append((surface, coords))  # Store the surface in the surfaces list
+
+
+    if new_game_button.draw():
+      new_game_text = afficher_text(fenetre,
+                                    f"Partie terminée!",
+                                    fenetre.get_width(),
+                                    fenetre.get_height(), 60, "Impact", center=True, couleur=(255, 255, 255))
+      fenetre.blit(new_game_text[0], new_game_text[1])
+      pygame.display.flip()
+      pygame.time.delay(3000)
+      partie = None
+      break
+      # print(partie.pgn)
+
+    if fen_button.draw():
+      print(endgame_and_opening_move_finder.board_to_fen(partie.grille, partie.tour))
+
+    if save_game_button.draw():
+
+      with open("dernière position.txt", "w") as f:
+        f.write(endgame_and_opening_move_finder.board_to_fen(partie.grille, partie.tour, complet=False))
+
+        print("Plateau sauvegardé")
+        board_saved_text = afficher_text(fenetre,
+                                      f"Plateau sauvegardé",
+                                      820,
+                                      690, 25, "Impact", center=False, couleur=(255, 255, 255))
+        fenetre.blit(board_saved_text[0], board_saved_text[1])
+        pygame.display.flip()
+        pygame.time.delay(1000)
 
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
@@ -311,9 +229,9 @@ def start_semiauto(partie, start_tour:str):
             converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
             from engine.endgame_and_opening_move_finder import convert_custom_move
             if selected_piece.type_de_piece == "pion":
-              partie.pgn+=f" {tour_num}. {convert_custom_move((selected_piece, converted_coords))[1]}"
+              partie.pgn+=f" {partie.compteur_de_tour}. {convert_custom_move((selected_piece, converted_coords))[1]}"
             else:
-              partie.pgn+=f" {tour_num}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
+              partie.pgn+=f" {partie.compteur_de_tour}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
             partie.grille = selected_piece.move(converted_coords[0] - selected_piece.x,
                                                 converted_coords[1] - selected_piece.y, partie.grille)
             partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
@@ -331,10 +249,10 @@ def start_semiauto(partie, start_tour:str):
             partie.tour = chess_utils.couleur_oppose(partie.tour)
             break
 
-      if check_click(pieces, event) and partie.tour == start_tour:
+      if check_click(pieces, event) and (partie.tour == start_tour or partie.mode == "manuel"):
         selected = check_click(pieces, event)
       #Si pas de pièces sont séléctionnée et que c'est aux noirs donc au bot
-      elif not selected and partie.tour == chess_utils.couleur_oppose(start_tour):
+      elif not selected and partie.tour == chess_utils.couleur_oppose(start_tour) and partie.mode == "semi-auto":
         #Affiche le emssage d'attente pendant que le bot choisi le coup
         fenetre_originale = fenetre.copy()
         bot_reflechit = afficher_text(fenetre, "Le bot réfléchit au meilleur coup...",

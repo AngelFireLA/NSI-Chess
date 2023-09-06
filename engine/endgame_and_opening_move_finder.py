@@ -4,7 +4,7 @@ import time
 import requests
 import json
 import os
-parent_directory = os.path.dirname(os.getcwd())+"/engine/"
+parent_directory = os.getcwd()+"/engine/"
 
 #Utilise l'api de lichess pour récupérer le meilleur coup de fin de partie
 #Api obligatoire car pour 7 pièces restantes, c'est plus d'un terraoctet de stockage
@@ -115,7 +115,7 @@ def get_best_move_from_opening_book(grille, couleur):
 
 
 #Transforme la liste plateau en string FEN pour les fonctions le nécessitant
-def board_to_fen(board, couleur, status="endgame"):
+def board_to_fen(board, couleur, status="endgame", complet=True):
     fen = ''
     for row in board:
         empty_count = 0
@@ -132,6 +132,8 @@ def board_to_fen(board, couleur, status="endgame"):
             fen += str(empty_count)
         fen += '/'
     fen = fen[:-1]  # Remove the trailing '/'
+    if not complet:
+        return fen
     if status == "ouverture":
         roc =  " KQkq - 0 1"
     else:
