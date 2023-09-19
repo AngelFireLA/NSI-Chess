@@ -8,7 +8,7 @@ import bots.negamax as negamax
 import os
 
 # Get the parent directory (folder just before the current one)
-parent_directory = os.path.dirname(os.getcwd())+"/engine/"
+parent_directory = os.getcwd()+"/"
 
 from engine.pieces.piece import Roi
 

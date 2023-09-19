@@ -133,10 +133,10 @@ class Roi(Piece):
 class Pion(Piece):
     def __init__(self, couleur: str, x: int = 0, y: int = 0):
         super().__init__(couleur, "pion", x, y, 100)
-    def copy(self):
-        new_piece = Pion(self.couleur,  self.x, self.y)
 
-        return new_piece
+    def copy(self):
+        return Pion(self.couleur, self.x, self.y)
+
     def get_patterne_possible(self, grille: list):
         if self.couleur == "blanc":
             patterne = []
