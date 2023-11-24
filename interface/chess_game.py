@@ -147,6 +147,7 @@ def start_partie(partie, start_tour:str="blanc"):
   new_game_button = button_library.Button(920, 150, 1.1, "Nouvelle Partie", fenetre, button, montrer=True, taille_texte=25, temps_animation=50)
   save_game_button = button_library.Button(950, 650, 1.4, "Sauvegarder le plateau", fenetre, button, montrer=True, taille_texte=23, temps_animation=50)
   previous_board_button = button_library.Button(950, 550, 0.25, "", fenetre, button_type=left_arrow_button, montrer=False)
+  next_board_button = button_library.Button(1050, 550, 0.25, "", fenetre, button_type=right_arrow_button, montrer=False)
 
   # Boucle principale du jeu
   while not partie.terminee:
