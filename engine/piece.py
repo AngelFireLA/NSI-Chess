@@ -201,8 +201,6 @@ class Pion(Piece):
             else:
                 return grille
         else:
-            from engine import endgame_and_opening_move_finder
-            print(endgame_and_opening_move_finder.board_to_fen(grille, self.couleur))
             raise ValueError(f"Le coup({x_added}, {y_added}) n'est pas valide pour la pièce {self.type_de_piece} de couleur {self.couleur} au coordonnées {(self.x, self.y)}.")
 
 

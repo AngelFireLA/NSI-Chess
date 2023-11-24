@@ -2,7 +2,7 @@ import chess_utils
 from bots import negamax
 from engine import endgame_and_opening_move_finder
 from engine.partie import Partie
-from engine.pieces.piece import Roi
+from engine.piece import Roi
 
 
 def simulate_match(fen):

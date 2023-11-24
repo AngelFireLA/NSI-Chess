@@ -1,7 +1,7 @@
 from interface import chess_game
 import chess_utils
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
+from engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 import time
 
 
@@ -28,7 +28,7 @@ class Partie:
         self.depth = 4
         self.second_depth = 4
         self.temps_de_reflexion = None
-        self.compteur_de_tour = 1
+        self.compteur_de_tour = 0
         self.pgn = """[Event "Game"]
 [Site "Somewhere"]
 [Date "Sometime"]
@@ -38,6 +38,7 @@ class Partie:
 [Result "*"]\n
         """
         self.repetitions = []
+        self.grilles = []
 
     # Met en place le tableau à partir d'un string FEN qui est un texte qui dit quel pièce va a quelle place,
     # on peut le générer pour n'importe quel position
@@ -62,7 +63,8 @@ class Partie:
                     ligne.append(piece)
                     file_index += 1
             grille.append(ligne)
-        self.grille = grille
+        self.grilles.append(grille)
+        self.grille = self.grilles[self.compteur_de_tour]
         self.setup = True
 
     # Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
@@ -131,7 +133,9 @@ class Partie:
                             f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
                         best_piece: Roi
                         # Effectue le meilleur coup trouvé
-                        self.grille = best_piece.move(best_move[0], best_move[1], self.grille)
+                        self.compteur_de_tour += 1
+                        self.grilles.append(best_piece.move(best_move[0], best_move[1], self.grille))
+                        self.grille = self.grilles[self.compteur_de_tour]
                         chess_utils.montrer_grille(self.grille)
                         self.repetitions.append(negamax.zobrist_hash(self.grille, self.compteur_de_tour))
                         # change le tour
@@ -139,7 +143,7 @@ class Partie:
                             self.tour = "noir"
                         else:
                             self.tour = "blanc"
-                        self.compteur_de_tour+=1
+
                         # s'il ne reste pas au moins un roi de chaque couleur, ça termine la partie
                         echec_et_mat = chess_utils.check_si_roi_restant(self.grille)
                         if echec_et_mat:
@@ -186,6 +190,7 @@ def test(d=5, loop_amount=5):
     print()
     print(outcomes)
     print(sum(outcomes) / len(outcomes))
+
 
 
 

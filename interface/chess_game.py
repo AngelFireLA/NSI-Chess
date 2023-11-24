@@ -3,10 +3,9 @@ import pygame
 import time
 import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
 import bots.negamax as negamax
-import os
 import interface.button as button_library
 
-from engine.pieces.piece import Roi
+from engine.piece import Roi
 
 DEPTH = 4
 #Position d'une pièces sur la case (0, 0)
@@ -88,8 +87,8 @@ def get_bot_move(grid, tour, depth, partie):
   print(f"Bot played in {total_time} seconds thinking the current eval is {best_score}.")
   print()
   best_piece: Roi
+
   grid = best_piece.move(best_move[0], best_move[1], grid)
-  partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
 
   surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
   coords = grille[best_piece.y][best_piece.x]
@@ -99,7 +98,6 @@ def get_bot_move(grid, tour, depth, partie):
     partie.pgn+=f" {convert_custom_move((best_piece, best_move))[1]}"
   else:
     partie.pgn += f" {endgame_and_opening_move_finder.symbol_from_piece(best_piece)}{convert_custom_move((best_piece, best_move))[1]}"
-  partie.compteur_de_tour+=1
   return (surface, piece_rect), grid
 
 #Affiche un texte selon des paramètres
@@ -139,13 +137,16 @@ def start_partie(partie, start_tour:str="blanc"):
 
   button = pygame.image.load("images/button.png").convert_alpha()
   pressed_button = pygame.image.load("images/button_pressed.png").convert_alpha()
+  left_arrow_button = pygame.image.load("images/left_arrow.png").convert_alpha()
+  right_arrow_button = pygame.image.load("images/right_arrow.png").convert_alpha()
+
   cross_button = pygame.image.load("images/button_cross.svg").convert_alpha()
-  button_library.set_button_images(button, pressed_button, cross_button)
+  button_library.set_button_images(button, pressed_button, cross_button, left_arrow_button, right_arrow_button)
 
   fen_button = button_library.Button(920, 750, 1, "Print FEN", fenetre, button, montrer=True, taille_texte=25, temps_animation=50)
   new_game_button = button_library.Button(920, 150, 1.1, "Nouvelle Partie", fenetre, button, montrer=True, taille_texte=25, temps_animation=50)
   save_game_button = button_library.Button(950, 650, 1.4, "Sauvegarder le plateau", fenetre, button, montrer=True, taille_texte=23, temps_animation=50)
-
+  previous_board_button = button_library.Button(950, 550, 0.25, "", fenetre, button_type=left_arrow_button, montrer=False)
 
   # Boucle principale du jeu
   while not partie.terminee:
@@ -232,17 +233,18 @@ def start_partie(partie, start_tour:str="blanc"):
               partie.pgn+=f" {partie.compteur_de_tour}. {convert_custom_move((selected_piece, converted_coords))[1]}"
             else:
               partie.pgn+=f" {partie.compteur_de_tour}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
-            partie.grille = selected_piece.move(converted_coords[0] - selected_piece.x,
-                                                converted_coords[1] - selected_piece.y, partie.grille)
+            partie.compteur_de_tour += 1
+            partie.grilles.append(selected_piece.move(converted_coords[0] - selected_piece.x,
+                                                converted_coords[1] - selected_piece.y, partie.grille))
+            partie.grille = partie.grilles[partie.compteur_de_tour]
             partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
-            partie.compteur_de_tour+=1
-            scores = chess_utils.points_avec_roi(partie.grille)
-            if scores[0] == scores[1]:
+            score = int(negamax.evaluate_board(partie.grille, chess_utils.get_couleur_int(partie.tour)))
+            if score == 0:
               print(f"Tour numéro {partie.compteur_de_tour}. Le score est égal.")
-            elif scores[0] > scores[1]:
-                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage blanc +{scores[0]-scores[1]}.")
+            elif score > 0:
+                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage {partie.tour} +{score}.")
             else:
-                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage noir +{scores[1]-scores[0]}.")
+                print(f"Tour numéro {partie.compteur_de_tour}. Le score est avantage {chess_utils.couleur_oppose(partie.tour)} +{abs(score)}.")
             selected_piece = None
             selected = None
             selected_squares.clear()
@@ -268,13 +270,13 @@ def start_partie(partie, start_tour:str="blanc"):
           if chess_utils.check_si_roi_restant(partie.grille):
             print(
               f"Partie terminée! Les vainqueurs sont les {chess_utils.check_si_roi_restant(partie.grille)} par capture du roi")
-            partie.terminee = True
+            # partie.terminee = True
             pygame.quit()
             exit()
 
           if chess_utils.egalite(partie.grille, partie):
             print("Egalité ! Il ne reste que des rois sur le plateau.")
-            partie.terminee = True
+            # partie.terminee = True
             pygame.quit()
             exit()
 
@@ -283,7 +285,10 @@ def start_partie(partie, start_tour:str="blanc"):
         # Restaure la fenêtre pygame
         fenetre.blit(fenetre_originale, (0, 0))
         pygame.display.update()
-        partie.grille = bot_answer[1]
+        partie.compteur_de_tour += 1
+        partie.grilles.append(bot_answer[1])
+        partie.grille = partie.grilles[partie.compteur_de_tour]
+        partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
         partie.tour = chess_utils.couleur_oppose(partie.tour)
 
     partie.points_blanc, partie.points_noir = chess_utils.points(partie.grille)
@@ -294,11 +299,12 @@ def start_partie(partie, start_tour:str="blanc"):
                                     fenetre.get_height(), 30, "Impact", center=True, couleur=(255, 255, 255))
       fenetre.blit(bot_reflechit[0], bot_reflechit[1])
       pygame.display.flip()
-      partie.terminee = True
+      # partie.terminee = True
+
       #print(partie.pgn)
       time.sleep(10)
-    if chess_utils.check_si_roi_restant(partie.grille):
-      partie_finie = True
+    # if chess_utils.check_si_roi_restant(partie.grille):
+    #   partie_finie = True
       #print(partie.pgn)
 
     if chess_utils.egalite(partie.grille, partie):
@@ -307,7 +313,7 @@ def start_partie(partie, start_tour:str="blanc"):
                                     fenetre.get_height(), 35, "Impact", center=True, couleur=(255, 255, 255))
       fenetre.blit(bot_reflechit[0], bot_reflechit[1])
       pygame.display.flip()
-      partie.terminee = True
+      # partie.terminee = True
       #print(partie.pgn)
       time.sleep(10)
     if chess_utils.egalite(partie.grille, partie):

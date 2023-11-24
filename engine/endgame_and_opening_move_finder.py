@@ -1,4 +1,4 @@
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
+from engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 
 import time
 import requests
@@ -178,7 +178,6 @@ def convert_custom_move(piece_class_move):
     orig_square_tuple = (original_pos[0], original_pos[1])
     dest_square_tuple = (x_change, y_change)
 
-    print(orig_square_tuple, coords_change)
 
     # Consider that the chess board coordinates start from the bottom left as (0,0) while python 2D array starts from top left.
     orig_square_chess_notation = chr(ord('a') + orig_square_tuple[0]) + str(8 - orig_square_tuple[1])

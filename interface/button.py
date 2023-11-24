@@ -1,11 +1,14 @@
 import pygame
 
 
-def set_button_images(button_surface, pressed_button_surface, cross_button_surface):
-    global button, pressed_button, cross_button
+def set_button_images(button_surface, pressed_button_surface, cross_button_surface, left_arrow_surface, right_arrow_surface):
+    global button, pressed_button, cross_button,  left_arrow, right_arrow
     button = button_surface
     pressed_button = pressed_button_surface
     cross_button = cross_button_surface
+    left_arrow = left_arrow_surface
+    right_arrow = right_arrow_surface
+
 
 
 class Button:
