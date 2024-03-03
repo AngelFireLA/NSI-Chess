@@ -1,8 +1,4 @@
-from  engine.partie import Partie
+import app_interface.chess_menu as menu
 
-# Partie exemple
-p = Partie()
-p.setup_from_fen("rgbvkbnr/tppppppi/pp4pp/8/8/PP4PP/TPPPPPPI/RGBVKBNR")
-
-
-p.run(menu=True)
+#partie.test(4, 10)
+menu.start_menu()

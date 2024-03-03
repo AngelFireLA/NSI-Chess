@@ -1,10 +1,8 @@
-import time
-
 import chess_utils
 from bots import negamax
-from engine import endgame_and_opening_move_finder
-from engine.partie import Partie
-from engine.pieces.piece import Roi
+from core_engine import endgame_and_opening_move_finder
+from core_engine.partie import Partie
+from core_engine.piece import Roi
 
 
 def simulate_match(fen):

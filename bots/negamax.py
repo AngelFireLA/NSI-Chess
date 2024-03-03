@@ -106,7 +106,7 @@ piece_tables = {
 
 #pip install functools
 #@cache
-def evaluate_board(grid, couleur: int, partie):
+def evaluate_board(grid, couleur: int):
 
 
 
@@ -298,7 +298,7 @@ def negamax(board, depth, alpha=-BIG_VALUE, beta=BIG_VALUE, color=1, initial_dep
 def q_search(alpha, beta, depth, board, color, partie):
 
 
-    stand_pat = evaluate_board(board, color, partie)
+    stand_pat = evaluate_board(board, color)
     if stand_pat >= beta:
         return beta
     if alpha < stand_pat:
@@ -312,7 +312,11 @@ def q_search(alpha, beta, depth, board, color, partie):
         new_board = [[piece.copy() if piece is not None else None for piece in row] for row in board]
         new_piece = piece.copy()
         new_board = new_piece.move(move[0], move[1], new_board)
-        value = -q_search(-beta, -alpha, depth - 1, new_board, -color)
+        partie.compteur_de_tour += 1
+        partie.repetitions.append(zobrist_hash(partie.grille, partie.compteur_de_tour))
+        value = -q_search(-beta, -alpha, depth - 1, new_board, -color, partie)
+        partie.compteur_de_tour -= 1
+        partie.repetitions.pop()
         if value >= beta:
             return beta
         alpha = max(alpha, value)
@@ -325,8 +329,8 @@ time_limit_global = None
 compteur_tour = 0
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
-def iterative_deepening_negamax(board, couleur, final_depth, time_limit=None, p_compteur_tour=0, partie_original=None):
-    from engine.partie import Partie
+def iterative_deepening_negamax(board, couleur, final_depth, time_limit=None, partie_original=None):
+    from core_engine.partie import Partie
     global  start_time, time_limit_global, best_move_global, best_moves_from_inferior_depth
     if not partie_original:
         raise ValueError
@@ -334,11 +338,11 @@ def iterative_deepening_negamax(board, couleur, final_depth, time_limit=None, p_
     p_compteur_tour = partie.compteur_de_tour
     j=0
     entries_to_remove = []
-    for hash in transposition_table:
-        entry = transposition_table[hash]
+    for t_hash in transposition_table:
+        entry = transposition_table[t_hash]
         if abs(int(entry.get('ply_count', 0)) - p_compteur_tour) > partie.depth:
             # remove entry the dict transposition table
-            entries_to_remove.append(hash)
+            entries_to_remove.append(t_hash)
             j += 1
 
     for entry in entries_to_remove:
