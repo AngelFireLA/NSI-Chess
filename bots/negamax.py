@@ -450,7 +450,7 @@ compteur_tour = 0
 
 #Technique d'optimization qui consiste à d'abord trouver le meilleur coup pour un recherche moins poussée, car il y a des chances que ça soit un bon coup
 def iterative_deepening_negamax(board, couleur, final_depth, time_limit=None, partie_original=None):
-    from engine.partie import Partie
+    from core_engine.partie import Partie
     global  start_time, time_limit_global, best_move_global, best_moves_from_inferior_depth
     if not partie_original:
         raise ValueError

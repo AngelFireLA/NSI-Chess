@@ -1,7 +1,7 @@
-from interface import chess_game
+from app_interface import chess_game
 import chess_utils
-import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
-from engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
+import core_engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
+from core_engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 import time
 
 
@@ -63,8 +63,7 @@ class Partie:
                     ligne.append(piece)
                     file_index += 1
             grille.append(ligne)
-        self.grilles.append(grille)
-        self.grille = self.grilles[self.compteur_de_tour]
+        self.grille = grille
         self.setup = True
 
     # Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
@@ -76,7 +75,7 @@ class Partie:
             import bots.negamax as negamax
             if self.type_de_partie == "normale":
                 if menu:
-                    import interface.chess_menu as chess_menu
+                    import app_interface.chess_menu as chess_menu
                     chess_menu.start_menu(self)
                     return
                 # Boucle qui laisse les joueurs jouer tant que la partie n'est pas terminée
@@ -134,8 +133,7 @@ class Partie:
                         best_piece: Roi
                         # Effectue le meilleur coup trouvé
                         self.compteur_de_tour += 1
-                        self.grilles.append(best_piece.move(best_move[0], best_move[1], self.grille))
-                        self.grille = self.grilles[self.compteur_de_tour]
+                        print("auto appended")
                         chess_utils.montrer_grille(self.grille)
                         self.repetitions.append(negamax.zobrist_hash(self.grille, self.compteur_de_tour))
                         # change le tour

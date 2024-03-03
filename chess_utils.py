@@ -179,6 +179,9 @@ def couleur_oppose(couleur:str):
     else:
         return None
 
+def copy_grille(grille):
+    return [[piece.copy() if piece is not None else None for piece in row] for row in grille]
+
 
 
 

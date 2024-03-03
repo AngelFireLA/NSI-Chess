@@ -4,7 +4,7 @@ def start_menu(fen="default"):
     import pygame_menu
     import os
     pygame.init()
-    from engine.partie import Partie
+    from core_engine.partie import Partie
 
 
     # Initialize pygame

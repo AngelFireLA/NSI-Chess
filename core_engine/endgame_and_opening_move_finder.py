@@ -1,10 +1,10 @@
-from engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
+from core_engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 
 import time
 import requests
 import json
 import os
-parent_directory = os.getcwd()+"/engine/"
+parent_directory = os.getcwd()+"/core_engine/"
 
 #Utilise l'api de lichess pour récupérer le meilleur coup de fin de partie
 #Api obligatoire car pour 7 pièces restantes, c'est plus d'un terraoctet de stockage

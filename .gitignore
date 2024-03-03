@@ -5,5 +5,5 @@
 *.pyc
 *.rtbw
 *.rtbz
-engine/endgame/
+core_engine/endgame/
 temp.py
