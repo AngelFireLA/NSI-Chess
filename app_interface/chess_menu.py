@@ -5,6 +5,7 @@ def start_menu(fen="default"):
     import os
     pygame.init()
     from core_engine.partie import Partie
+    a = [[[1, 1], [1, -1], [-1, -1], [-1, 1]], [2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]
 
 
     # Initialize pygame

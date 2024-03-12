@@ -88,10 +88,9 @@ def egalite(grille, partie) -> bool:
 def insufficient_material(type_de_pieces_restantes):
     blanc = type_de_pieces_restantes["blanc"]
     noir = type_de_pieces_restantes["noir"]
-
     # Check if there are any pawns, queens, or rooks on the board
     for color in [blanc, noir]:
-        if color["pion"] +color["dame"] + color["tour"] + color["goku"] + color["vegeta"] + color["voleur"] +  color["imposteur"] > 0:
+        if sum(color.values()) - color["roi"] - color["cavalier"] - color["fou"] > 0:
             return False
 
     # Check for lone king

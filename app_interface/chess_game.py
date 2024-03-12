@@ -6,8 +6,9 @@ import app_interface.button as button_library
 import bots.negamax as negamax
 import chess_utils as c_u
 import core_engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
-from core_engine.piece import Roi
 from core_engine.endgame_and_opening_move_finder import convert_custom_move
+from core_engine.piece import Roi
+
 DEPTH = 4
 # Position d'une pièces sur la case (0, 0)
 initial_x = 50
@@ -53,7 +54,7 @@ plateau = []
 
 
 # récupère le coup du bot, similaire à la fonction run() de Partie
-def get_bot_move(grid, tour, depth, partie):
+def get_bot_move(grid, tour, depth, partie, bot):
     # call negamax to find the best move
     if tour == "blanc":
         couleur = 1
@@ -76,15 +77,13 @@ def get_bot_move(grid, tour, depth, partie):
                 best_score, best_combo = 69, (grid[piece[1]][piece[0]], move)
             else:
 
-                # best_score, best_combo = negamax.negascout(grid, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur,
+                best_score, best_combo = bot.iterative_deepening_negamax(grid, couleur,
                                                                              depth, partie.temps_de_reflexion,
                                                                              partie_original=partie)
 
         else:
 
-            # best_score, best_combo = negamax.negascout(grid, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-            best_score, best_combo = negamax.iterative_deepening_negamax(grid, couleur, depth,
+            best_score, best_combo = bot.iterative_deepening_negamax(grid, couleur, depth,
                                                                          partie.temps_de_reflexion,
                                                                          partie_original=partie)
     if not best_combo:
@@ -96,7 +95,13 @@ def get_bot_move(grid, tour, depth, partie):
     print(f"Bot played in {total_time} seconds thinking the current eval is {best_score}.")
     print()
     best_piece: Roi
-
+    print(best_combo, (best_piece.x, best_piece.y))
+    from core_engine.endgame_and_opening_move_finder import convert_custom_move
+    if best_piece.type_de_piece == "pion":
+        partie.pgn += f" {convert_custom_move(best_piece, (best_move[0]+best_piece.x,best_piece.y + best_move[1]))[1]}"
+    else:
+        partie.pgn += f" {endgame_and_opening_move_finder.symbol_from_piece(best_piece).upper()}{convert_custom_move(best_piece, (best_move[0]+best_piece.x,best_piece.y + best_move[1]))[1]}"
+    print(partie.pgn)
     grid = best_piece.move(best_move[0], best_move[1], grid)
     partie.grilles.append(c_u.copy_grille(grid))
     if len(partie.grilles) > 1 and len(
@@ -113,11 +118,6 @@ def get_bot_move(grid, tour, depth, partie):
     surface = pygame.image.load(f"images/{best_piece.type_de_piece} {best_piece.couleur}.png")
     coords = grille[best_piece.y][best_piece.x]
     piece_rect = pygame.Rect(coords[0], coords[0], surface.get_width(), surface.get_height())
-    from core_engine.endgame_and_opening_move_finder import convert_custom_move
-    if best_piece.type_de_piece == "pion":
-        partie.pgn += f" {convert_custom_move((best_piece, best_move))[1]}"
-    else:
-        partie.pgn += f" {endgame_and_opening_move_finder.symbol_from_piece(best_piece)}{convert_custom_move((best_piece, best_move))[1]}"
     return (surface, piece_rect), grid
 
 
@@ -135,7 +135,7 @@ def afficher_text(fenetre, texte: str, x: int, y: int, taille, font_choisi: str,
     return text_surface, (text_x, text_y)
 
 
-def start_partie(partie, start_tour: str = "blanc"):
+def start_partie(partie, start_tour: str = "blanc", bot=None):
     global DEPTH
     DEPTH = partie.depth
     from core_engine.partie import Partie
@@ -155,7 +155,6 @@ def start_partie(partie, start_tour: str = "blanc"):
     partie.tour = "blanc"
     bot_answer = None
     partie_finie = False
-    negamax.init_transposition()
 
     button = pygame.image.load("images/button.png").convert_alpha()
     pressed_button = pygame.image.load("images/button_pressed.png").convert_alpha()
@@ -176,6 +175,8 @@ def start_partie(partie, start_tour: str = "blanc"):
     next_board_button = button_library.Button(1050, 550, 0.25, "", fenetre, button_type=right_arrow_button,
                                               montrer=False)
     partie.grilles.append(c_u.copy_grille(partie.grille))
+    if not bot:
+        bot = negamax.Bot("negamax")
     # Boucle principale du jeu
     while not partie.terminee:
         selected_squares.clear()
@@ -250,20 +251,25 @@ def start_partie(partie, start_tour: str = "blanc"):
                 for square_rect in selected_squares:
                     if square_rect.collidepoint(mouse_pos):
                         converted_coords = tuple(map(int, coords_from_pixel(square_rect.centerx, square_rect.centery)))
-
-                        if selected_piece.type_de_piece == "pion":
-                            partie.pgn += f" {partie.compteur_de_tour}. {convert_custom_move((selected_piece, converted_coords))[1]}"
+                        if partie.compteur_de_tour%2 == 0:
+                            if selected_piece.type_de_piece == "pion":
+                                partie.pgn += f" {partie.compteur_de_tour//2+1}. {convert_custom_move(selected_piece, converted_coords)[1]}"
+                            else:
+                                partie.pgn += f" {partie.compteur_de_tour//2+1}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece).upper()}{convert_custom_move(selected_piece, converted_coords)[1]}"
                         else:
-                            partie.pgn += f" {partie.compteur_de_tour}. {endgame_and_opening_move_finder.symbol_from_piece(selected_piece)}{convert_custom_move((selected_piece, converted_coords))[1]}"
+                            if selected_piece.type_de_piece == "pion":
+                                partie.pgn += f" {convert_custom_move(selected_piece, converted_coords)[1]}"
+                            else:
+                                partie.pgn += f" {endgame_and_opening_move_finder.symbol_from_piece(selected_piece).upper()}{convert_custom_move(selected_piece, converted_coords)[1]}"
                         partie.compteur_de_tour += 1
                         resulting_grille = selected_piece.move(converted_coords[0] - selected_piece.x,
-                                                                  converted_coords[1] - selected_piece.y,
-                                                                  partie.grille)
+                                                               converted_coords[1] - selected_piece.y,
+                                                               partie.grille)
                         partie.grilles.append(c_u.copy_grille(resulting_grille))
 
                         if len(partie.grilles) > 1 and len(
                                 c_u.liste_pieces_restantes(partie.grilles[-1])) < len(
-                                c_u.liste_pieces_restantes(partie.grilles[-2])):
+                            c_u.liste_pieces_restantes(partie.grilles[-2])):
                             # play audio/capture.mp3
                             print("played")
                             pygame.mixer.music.load("audio/capture.mp3")
@@ -273,8 +279,8 @@ def start_partie(partie, start_tour: str = "blanc"):
                             pygame.mixer.music.load("audio/move-self.mp3")
                             pygame.mixer.music.play()
 
-                        partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
-                        score = int(negamax.evaluate_board(partie.grille, c_u.get_couleur_int(partie.tour)))
+                        partie.repetitions.append(bot.zobrist_hash(partie.grille, partie.compteur_de_tour))
+                        score = int(bot.evaluate_board(partie.grille, c_u.get_couleur_int(partie.tour)))
                         if score == 0:
                             print(f"Tour numéro {partie.compteur_de_tour}. Le score est égal.")
                         elif score > 0:
@@ -287,6 +293,7 @@ def start_partie(partie, start_tour: str = "blanc"):
                         selected = None
                         selected_squares.clear()
                         partie.tour = c_u.couleur_oppose(partie.tour)
+                        print(partie.pgn)
                         break
 
             if check_click(pieces, event) and (partie.tour == start_tour or partie.mode == "manuel"):
@@ -302,7 +309,7 @@ def start_partie(partie, start_tour: str = "blanc"):
 
                 pygame.display.flip()
 
-                bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH, partie)
+                bot_answer = get_bot_move(partie.grille, partie.tour, DEPTH, partie, bot)
                 # Si le bot retourne None c'est que la partie est finie
                 if not bot_answer:
                     if c_u.check_si_roi_restant(partie.grille):
@@ -324,7 +331,7 @@ def start_partie(partie, start_tour: str = "blanc"):
                 fenetre.blit(fenetre_originale, (0, 0))
                 pygame.display.update()
                 partie.compteur_de_tour += 1
-                partie.repetitions.append(negamax.zobrist_hash(partie.grille, partie.compteur_de_tour))
+                partie.repetitions.append(bot.zobrist_hash(partie.grille, partie.compteur_de_tour))
                 partie.tour = c_u.couleur_oppose(partie.tour)
 
         partie.points_blanc, partie.points_noir = c_u.points(partie.grille)
@@ -335,12 +342,12 @@ def start_partie(partie, start_tour: str = "blanc"):
                                           fenetre.get_height(), 30, "Impact", center=True, couleur=(255, 255, 255))
             fenetre.blit(bot_reflechit[0], bot_reflechit[1])
             pygame.display.flip()
-            # partie.terminee = True
+            partie.terminee = True
 
             # print(partie.pgn)
             time.sleep(10)
-        # if c_u.check_si_roi_restant(partie.grille):
-        #   partie_finie = True
+        if c_u.check_si_roi_restant(partie.grille):
+          partie_finie = True
         # print(partie.pgn)
 
         if c_u.egalite(partie.grille, partie):

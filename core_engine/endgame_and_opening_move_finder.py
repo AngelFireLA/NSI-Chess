@@ -171,23 +171,29 @@ def convert_move(chess_move):
 
     return source_coords, dest_coords
 
-def convert_custom_move(piece_class_move):
-    piece_class, coords_change = piece_class_move
-    x_change, y_change = coords_change
+def convert_custom_move(piece, new_position, include_original_column=True):
+    # Assuming piece.x and piece.y give the current position in Pygame coordinates
+    original_x, original_y = piece.x, piece.y  # Current position
+    destination_x, destination_y = new_position[0], new_position[1]  # Directly use the absolute new position
 
-    original_pos = (piece_class.x,  piece_class.y)  # assuming you store the current position in 'position'
+    # Convert positions to chess notation, adjusting for the coordinate system used
+    def to_chess_notation(x, y):
+        # Translate Pygame's (0, 0) at the top-left to chess board's bottom-left orientation
+        # This translation assumes an 8x8 board with (0, 0) at the top-left
+        return chr(ord('a') + x) + str(8 - y)
 
-    # Create original and destination squares in tuple (x_change, y_change)
-    orig_square_tuple = (original_pos[0], original_pos[1])
-    dest_square_tuple = (x_change, y_change)
+    orig_notation = to_chess_notation(original_x, original_y)
+    dest_notation = to_chess_notation(destination_x, destination_y)
+
+    if include_original_column:
+        # Prepend the original column letter to the destination notation
+        dest_notation = orig_notation[0] + dest_notation
+
+    return (orig_notation, dest_notation)
 
 
-    # Consider that the chess board coordinates start from the bottom left as (0,0) while python 2D array starts from top left.
-    orig_square_chess_notation = chr(ord('a') + orig_square_tuple[0]) + str(8 - orig_square_tuple[1])
-    dest_square_chess_notation = chr(ord('a') + dest_square_tuple[0]) + str(8 - dest_square_tuple[1])
 
-    chess_move = (orig_square_chess_notation, dest_square_chess_notation)
-    return chess_move
+
 
 
 

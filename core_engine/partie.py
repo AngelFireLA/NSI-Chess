@@ -1,22 +1,35 @@
-from app_interface import chess_game
-import chess_utils
-from engine.pieces.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur, Imposteur
-import bots.negamax as negamax
+import json
 
-import engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
+import chess_utils
 import core_engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
+from app_interface import chess_game
 from core_engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion, Piece, Goku, Vegeta, Voleur, Imposteur
 import time
 
-
 def piece_from_symbol(symbol: str):
-    symbol_piece_dict = {
-        'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
-        'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"),
-        'k': (Roi, "noir"), 'q': (Dame, "noir"), 'r': (Tour, "noir"), 'b': (Fou, "noir"),
-        'n': (Cavalier, "noir"), 'p': (Pion, "noir")
+    # Static mapping for predefined classes
+    static_symbol_class_mapping = {
+        'K': Roi, 'Q': Dame, 'R': Tour, 'B': Fou,
+        'N': Cavalier, 'P': Pion, 'T':Vegeta
     }
-    return symbol_piece_dict[symbol]
+
+    color = "blanc" if symbol.isupper() else "noir"
+    symbol_upper = symbol.upper()
+
+    # Check in static mapping
+    if symbol_upper in static_symbol_class_mapping:
+        piece_class = static_symbol_class_mapping[symbol_upper]
+        return piece_class, color
+    else:
+        with open('custom_pieces.json', 'r') as config_file:
+            config = json.load(config_file)
+            for piece_info in config['pieces']:
+                if symbol_upper == piece_info["symbole"].upper():
+                    class_name = piece_info["class_name"]
+                    class_obj = globals()[class_name]
+                    return class_obj, color
+
+
 
 
 class Partie:
@@ -34,9 +47,9 @@ class Partie:
         self.temps_de_reflexion = None
         self.compteur_de_tour = 0
         self.pgn = """[Event "Game"]
-[Site "Somewhere"]
-[Date "Sometime"]
-[Round "1"]
+[Site "?"]
+[Date "?"]
+[Round "?"]
 [White "White"]
 [Black "Black"]
 [Result "*"]\n
@@ -70,16 +83,6 @@ class Partie:
         self.grille = grille
         self.setup = True
 
-    #CUSTOM TODO
-    # Dans un string fen, chaque lettre veut dire une pièce, ici on définit quelle lettre dans le string FEN correspond à quelle pièce, agrandissable pour des pièces customs
-    def piece_from_symbol(self, symbol: str):
-        symbol_piece_dict = {
-            'K': (Roi, "blanc"), 'Q': (Dame, "blanc"), 'R': (Tour, "blanc"), 'B': (Fou, "blanc"),
-            'N': (Cavalier, "blanc"), 'P': (Pion, "blanc"), 'G': (Goku, "blanc"), 'V': (Vegeta, 'blanc'), 'T': (Voleur, 'blanc'), 'I': (Imposteur, 'blanc'),
-            'k': (Roi, "noir"), 'q': (Dame, "noir"), 'r': (Tour, "noir"), 'b': (Fou, "noir"),
-            'n': (Cavalier, "noir"), 'p': (Pion, "noir"), 'g': (Goku, "noir"), 'v': (Vegeta, 'noir'), 't': (Voleur, 'noir'), 'i': (Imposteur, 'noir'),
-        }
-        return symbol_piece_dict[symbol]
 
 
     # Boucle qui gère le début jusqu'à la fin d'une partie
@@ -96,8 +99,8 @@ class Partie:
 
                 if self.mode == "auto":
                     chess_utils.montrer_grille(self.grille)
-                    negamax.init_transposition()
-                    self.repetitions.append(negamax.zobrist_hash(self.grille, self.compteur_de_tour))
+                    bot = negamax.Bot("negamax")
+                    self.repetitions.append(bot.zobrist_hash(self.grille, self.compteur_de_tour))
                     while not self.terminee:
                         # manuel = joueur contre joueur, semi-auto = joueur contre bot, auto = bot contre bot
                         if self.tour == "blanc":
@@ -126,17 +129,15 @@ class Partie:
                                     best_score, best_combo = 69, (self.grille[piece[1]][piece[0]], move)
                                 else:
 
-                                    # best_score, best_combo = negamax.negascout(self.grille, depth, color=couleur, alpha=-float('inf'), beta=float('inf'))
-                                    best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
+                                    best_score, best_combo = bot.iterative_deepening_negamax(self.grille, couleur,
                                                                                                  depth, partie_original=self)
 
                             # utilise l'algorithme de recherche du meilleur coup de negamax.py de manière normale
                             else:
-                                best_score, best_combo = negamax.iterative_deepening_negamax(self.grille, couleur,
+                                best_score, best_combo = bot.iterative_deepening_negamax(self.grille, couleur,
                                                                                              depth, partie_original=self)
                         # Récupère meilleur pièce, coup et score
                         best_piece, best_move = best_combo
-                        print(best_score)
                         end_time = time.time()
                         total_time = end_time - start_time
 
@@ -149,7 +150,7 @@ class Partie:
                         self.compteur_de_tour += 1
                         print("auto appended")
                         chess_utils.montrer_grille(self.grille)
-                        self.repetitions.append(negamax.zobrist_hash(self.grille, self.compteur_de_tour))
+                        self.repetitions.append(bot.zobrist_hash(self.grille, self.compteur_de_tour))
                         # change le tour
                         if self.tour == "blanc":
                             self.tour = "noir"

@@ -1,0 +1,34 @@
+{
+  "pieces" : [
+    {
+      "class_name": "Goku",
+      "symbole": "G",
+      "valeur": 640,
+      "type_de_piece": "goku",
+      "patterne": [[[1, 1], [1, -1], [-1, -1], [-1, 1]], [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]],
+      "mouvements": ["etendu", "precis"],
+      "promotion": ["random_delete"],
+      "abilite": []
+    },
+    {
+      "class_name": "Imposteur",
+      "symbole": "I",
+      "valeur": 675,
+      "type_de_piece": "imposteur",
+      "patterne": [[[1, 1], [1, -1], [-1, -1], [-1, 1], [1, 0], [-1, 0], [0, 1], [0, -1]]],
+      "mouvements": ["etendu"],
+      "promotion": [],
+      "abilite": ["imposteur"]
+    },
+    {
+      "class_name": "Voleur",
+      "symbole": "V",
+      "valeur": 900,
+      "type_de_piece": "voleur",
+      "patterne": [[[1, 1], [1, -1], [-1, -1], [-1, 1], [1, 0], [-1, 0], [0, 1], [0, -1]]],
+      "mouvements": ["precis"],
+      "promotion": [],
+      "abilite": ["voleur"]
+    }
+  ]
+}
