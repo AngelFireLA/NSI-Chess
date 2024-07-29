@@ -7,3 +7,4 @@
 *.rtbz
 core_engine/endgame/
 temp.py
+.idea/NSI-Chess.iml

@@ -1,4 +1,4 @@
-from app_interface import chess_game
+#from app_interface import chess_game
 import chess_utils
 import core_engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
 from core_engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
@@ -152,42 +152,49 @@ class Partie:
                         if chess_utils.egalite(self.grille, self):
                             print("Egalité ! Il ne reste que des rois sur le plateau.")
                             self.terminee = True
-                if self.mode == "semi-auto":
-                    chess_game.start_partie(self, couleur)
-                if self.mode == "manuel":
-                    chess_game.start_partie(self)
+                # if self.mode == "semi-auto":
+                #     chess_game.start_partie(self, couleur)
+                # if self.mode == "manuel":
+                #     chess_game.start_partie(self)
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 
+import timeit
+
+
+
 def test(d=5, loop_amount=5):
     p = Partie()
-    p.setup_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
-    import cProfile
-    import pstats
-    outcomes = []
+    p.setup_from_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR')
     import bots.negamax as negamax
+    outcomes = []
+
     for i in range(loop_amount):
-        print(f"Loop {i+1}/{loop_amount}")
+        print(f'Loop {i + 1}/{loop_amount}')
         negamax.init_transposition()
 
-        if p.tour == "blanc":
+        if p.tour == 'blanc':
             couleur = 1
         else:
             couleur = -1
 
-        with cProfile.Profile() as pr:
+        def timed_function():
+            nonlocal best_score, best_combo
             best_score, best_combo = negamax.iterative_deepening_negamax(p.grille, couleur, d, partie_original=p)
 
-        best_piece, best_move = best_combo
-        print(f"{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}")
+        best_score, best_combo = None, None
+        elapsed_time = timeit.timeit(timed_function, number=1)
 
-        stats = pstats.Stats(pr)
-        stats.sort_stats(pstats.SortKey.TIME)
-        stats.print_stats()
-        outcomes.append(stats.total_tt)
+        #best_piece, best_move = best_combo
+        #print(f'{best_piece.type_de_piece} {best_piece.couleur} en ({best_piece.x}, {best_piece.y}) a joué {best_move}')
+        #print(f'Time taken: {elapsed_time} seconds')
+
+        outcomes.append(elapsed_time)
+
     print()
     print(outcomes)
     print(sum(outcomes) / len(outcomes))
+    print(endgame_and_opening_move_finder.board_to_fen(p.grille, "blanc"))
 
 
 
