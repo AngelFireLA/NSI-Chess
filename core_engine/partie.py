@@ -1,6 +1,7 @@
 #from app_interface import chess_game
 import chess_utils
 import core_engine.endgame_and_opening_move_finder as endgame_and_opening_move_finder
+from app_interface import chess_game
 from core_engine.piece import Roi, Tour, Fou, Cavalier, Dame, Pion
 import time
 
@@ -152,10 +153,10 @@ class Partie:
                         if chess_utils.egalite(self.grille, self):
                             print("Egalité ! Il ne reste que des rois sur le plateau.")
                             self.terminee = True
-                # if self.mode == "semi-auto":
-                #     chess_game.start_partie(self, couleur)
-                # if self.mode == "manuel":
-                #     chess_game.start_partie(self)
+                if self.mode == "semi-auto":
+                    chess_game.start_partie(self, couleur)
+                if self.mode == "manuel":
+                    chess_game.start_partie(self)
         else:
             print("Erreur, vous n'avez pas setup la position initiale")
 

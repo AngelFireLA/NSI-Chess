@@ -32,7 +32,7 @@ def liste_pieces_dans_rayon(grille, x: int, y: int, rayon: int) -> list:
 #Récupère toutes les pièces et récupèrent chacun tous les coups possibles
 def liste_coups_legaux(couleur, grille):
     pieces = liste_pieces_bougeables(grille, couleur)
-    return [ (piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille) ]
+    return [(piece, coup) for piece in pieces for coup in piece.liste_coups_legaux(grille) ]
 
 # Use set intersection for faster check
 def check_si_roi_restant(grille):
@@ -88,37 +88,28 @@ def insufficient_material(type_de_pieces_restantes):
     blanc = type_de_pieces_restantes["blanc"]
     noir = type_de_pieces_restantes["noir"]
 
-    # Check if there are any pawns, queens, or rooks on the board
     for color in [blanc, noir]:
-        if color["pion"] +color["dame"] + color["tour"] > 0:
+        if color["pion"] + color["dame"] + color["tour"] > 0:
             return False
 
-    # Check for lone king
     if (blanc["roi"] == 1 and sum(blanc.values()) == 1) and (noir["roi"] == 1 and sum(noir.values()) == 1):
         return True
 
-    # Check for king and bishop, or king and knight
-    if (blanc["roi"] == 1 and blanc["fou"] == 1 and sum(blanc.values()) == 2) and (
-            noir["roi"] == 1 and sum(noir.values()) == 1):
+    if (blanc["roi"] == 1 and blanc["fou"] == 1 and sum(blanc.values()) == 2) and (noir["roi"] == 1 and sum(noir.values()) == 1):
         return True
-    if (blanc["roi"] == 1 and blanc["cavalier"] == 1 and sum(blanc.values()) == 2) and (
-            noir["roi"] == 1 and sum(noir.values()) == 1):
+    if (blanc["roi"] == 1 and blanc["cavalier"] == 1 and sum(blanc.values()) == 2) and (noir["roi"] == 1 and sum(noir.values()) == 1):
         return True
 
     # swap colors and repeat checks
-    if (noir["roi"] == 1 and noir["fou"] == 1 and sum(noir.values()) == 2) and (
-            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+    if (noir["roi"] == 1 and noir["fou"] == 1 and sum(noir.values()) == 2) and (blanc["roi"] == 1 and sum(blanc.values()) == 1):
         return True
-    if (noir["roi"] == 1 and noir["cavalier"] == 1 and sum(noir.values()) == 2) and (
-            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+    if (noir["roi"] == 1 and noir["cavalier"] == 1 and sum(noir.values()) == 2) and (blanc["roi"] == 1 and sum(blanc.values()) == 1):
         return True
 
     # Check for king and two knights
-    if (blanc["roi"] == 1 and blanc["cavalier"] == 2 and sum(blanc.values()) == 3) and (
-            noir["roi"] == 1 and sum(noir.values()) == 1):
+    if (blanc["roi"] == 1 and blanc["cavalier"] == 2 and sum(blanc.values()) == 3) and (noir["roi"] == 1 and sum(noir.values()) == 1):
         return True
-    if (noir["roi"] == 1 and noir["cavalier"] == 2 and sum(noir.values()) == 3) and (
-            blanc["roi"] == 1 and sum(blanc.values()) == 1):
+    if (noir["roi"] == 1 and noir["cavalier"] == 2 and sum(noir.values()) == 3) and (blanc["roi"] == 1 and sum(blanc.values()) == 1):
         return True
 
     return False
